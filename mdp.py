@@ -163,6 +163,22 @@ def createMDP():
 
 
 # SPARSE DENSE
+
+def calculate_num_of_states_transitions(mdp_object):
+
+    P = mdp_object.probabilities
+    S = mdp_object.states
+    num_of_states = len(S)
+
+    poss_states_transitions = 0 # Includes also states with transition's probability equal 0
+
+    for state in S:
+        executable_actions = get_possible_actions(P, state)
+        num_of_actions = len(executable_actions)
+        poss_states_transitions += num_of_states * num_of_actions
+
+    return poss_states_transitions
+
 # Function that outputs the number of states with a probability of 0.0 (indicating unreachable states)
 def unreachable_states(mdp_object):
 
@@ -170,13 +186,14 @@ def unreachable_states(mdp_object):
     actions = mdp_object.actions
     P = mdp_object.probabilities
 
-    poss_states_transitions = len(states)*len(states)*len(actions)
+    poss_states_transitions = calculate_num_of_states_transitions(mdp_object)
 
     unreachable_overall = 0
 
-    for s in states:
-        for a in actions:
-            prob_values = list(P[s][a].values())
+    for state in states:
+        executable_actions = get_possible_actions(P, state)
+        for action in executable_actions:
+            prob_values = list(P[state][action].values())
             unreachable = 0
             for prob_value in prob_values:
                 if prob_value == 0.0:
