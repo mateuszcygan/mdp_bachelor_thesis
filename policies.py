@@ -1,5 +1,6 @@
 import mdp
 import random
+
 # RANDOM POLICY
 
 # Based on selecting randomly action that should be executed
@@ -19,8 +20,9 @@ def random_policy(mdp_object, tran_num):
     for _ in range(0, tran_num): # Use _ as a placeholder for the loop variable
 
         print("curr_state:", current_state)
-
-        executed_action = random.choice(A) # Randomly choose action from A
+        executable_actions = mdp.get_possible_actions(P, current_state)
+        executed_action = random.choice(executable_actions) # Randomly choose action from A
+        
         print("random_action:", executed_action)
         policy[current_state] = executed_action # Add chosen action to the policy
 
