@@ -339,12 +339,10 @@ def reduce_actions_number(mdp, min_num=1, max_num=None):
     
     for state in S:
 
-        actions_num = random.randint(min_num, max_num) # Randomly choose a number from a given interval (number of executable actions from certain state)
-        random_actions = random.choices(A, k=actions_num) # Randomly choose actions that should be executable
-        print("Randomly chosen executable actions:", random_actions)
+        actions_num = random.randint(min_num, max_num) # Randomly choose a number from a given interval (number of actions that should not be deleted)
+        random_actions = random.sample(A, k=actions_num) # Randomly choose concrete actions that should not be deleted
 
-        actions_to_delete = set(A) - set(random_actions) # Determine actions that should be deleted for certain state
-        print("Actions to delete:", actions_to_delete)
+        actions_to_delete = set(A) - set(random_actions) # Determine actions that should be deleted for certain state (the remaining actions)
 
         for action_to_delete in actions_to_delete:
             del R[state][action_to_delete]
