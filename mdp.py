@@ -314,12 +314,14 @@ def sparse_mdp_rewards(mdp, reward_sparsity_rate):
     S = mdp.states
     A = mdp.actions
     R = mdp.rewards
+    P = mdp.probabilities
 
     old_probability_weight = 1 - reward_sparsity_rate
     sparsity_weights = [reward_sparsity_rate, old_probability_weight] # Sparse weights for 0.0 reward and assigned reward
 
     for current_state in S:
-        for action in A:
+        executable_actions = get_possible_actions(P, current_state)
+        for action in executable_actions:
             for following_state in S:
 
                 # possible_reward_values = [0]
