@@ -33,8 +33,8 @@ def generate_actions(actions_num):
 #              { 'a1' : { ... }}
 #       }
 #     }
-def generate_rewards(states, actions):
-    return {state : {action : {state : random.randint(-5, 5) for state in states} for action in actions} for state in states}
+def generate_rewards(states, actions, min_reward, max_reward):
+    return {state : {action : {state : random.randint(min_reward, max_reward) for state in states} for action in actions} for state in states}
 
 def gen_values_for_prob(states, actions):
     # Number of needed probability values = states * actions * states
@@ -96,7 +96,7 @@ def generate_prob(states, actions):
 
 # Going over to another state after selecting the action
 def state_transition(P, current_state, chosen_action):
-    prob_current_action = list(P[current_state][chosen_action].values())# Get probabilities for going over to another state from the current action
+    prob_current_action = list(P[current_state][chosen_action].values()) # Get probabilities for going over to another state from the current action
     following_states = list(P[current_state][chosen_action].keys())
     
     print("Probabilities of going to another state after", chosen_action, ":", prob_current_action)
@@ -114,26 +114,26 @@ def state_transition(P, current_state, chosen_action):
 
 # MDP
 class MDP:
-    def __init__(self, states, actions, rewards, probabilities):
+    def __init__(self, states, actions, probabilities, rewards):
         self.states = states
         self.actions = actions
-        self.rewards = rewards
         self.probabilities = probabilities
+        self.rewards = rewards
     
     def get_states(self):
         return self.states
 
     def get_actions(self):
         return self.actions
+
+    def get_probabilities(self):
+        return self.probabilities
     
     def get_rewards(self):
         return self.rewards
     
-    def get_probabilities(self):
-        return self.probabilities
-    
     def get_properties(self):
-        return self.states, self.actions, self.rewards, self.probabilities
+        return self.states, self.actions, self.probabilities, self.rewards
 
 # Return an array with rewards for going over to following states through an executed action from a current state
 def get_foll_states_rewards_values(R, current_state, executed_action): 
@@ -147,16 +147,16 @@ def get_foll_states_prob_values(P, current_state, executed_action):
 def get_possible_actions(P, state):
     return list(P[state].keys())
 
-def createMDP(states_num, actions_num):
+def createMDP(states_num, actions_num, min_reward, max_reward):
     # S = ['s0', 's1', 's2'] #state space
     # A = ['a0', 'a1'] #action space
     S = generate_states(states_num)
     A = generate_actions(actions_num)
 
-    R = generate_rewards(S, A)
+    R = generate_rewards(S, A, min_reward, max_reward)
     P = generate_prob(S, A)
 
-    return MDP(S, A, R, P)
+    return MDP(S, A, P, R)
 
 
 
@@ -357,8 +357,8 @@ def reduce_actions_number(mdp, min_num=1, max_num=None):
     
     A = mdp.actions
     S = mdp.states
-    R = mdp.rewards
     P = mdp.probabilities
+    R = mdp.rewards
     
     for state in S:
 
