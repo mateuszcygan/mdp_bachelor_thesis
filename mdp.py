@@ -1,23 +1,21 @@
 import random
 
 # SETS
-def generate_states():
+def generate_states(states_num):
 
     S = []
-    num_states = random.randint(3,9)
 
-    for state_num in range(num_states):
+    for state_num in range(states_num):
         state = 's' + str(state_num)
         S.append(state)
 
     return S
 
-def generate_actions():
+def generate_actions(actions_num):
 
     A = []
-    num_actions = random.randint(2,5)
 
-    for action_num in range(num_actions):
+    for action_num in range(actions_num):
         action = 'a' + str(action_num)
         A.append(action)
 
@@ -149,11 +147,11 @@ def get_foll_states_prob_values(P, current_state, executed_action):
 def get_possible_actions(P, state):
     return list(P[state].keys())
 
-def createMDP():
+def createMDP(states_num, actions_num):
     # S = ['s0', 's1', 's2'] #state space
     # A = ['a0', 'a1'] #action space
-    S = generate_states()
-    A = generate_actions()
+    S = generate_states(states_num)
+    A = generate_actions(actions_num)
 
     R = generate_rewards(S, A)
     P = generate_prob(S, A)
