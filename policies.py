@@ -56,12 +56,10 @@ def print_value_function(V):
     for state, value in V.items():
         print(state, ":", value)
 
-def value_iteration(mdp_object, threshold):
+def value_iteration(mdp_object, threshold, discount_factor):
 
     # Extract MDP properties
     S, A, R, P = mdp_object.get_properties()
-
-    dicount_factor = 0.9
 
     # Initialize the value for each state to 0
     V = {s : 0 for s in S}
@@ -71,24 +69,23 @@ def value_iteration(mdp_object, threshold):
     i = 0 # Number of iterations
 
     while True:
-        i += 1
-        print("Iteration number", i, "\n")
+        i += 1 # Number of iterations - for test cases
 
         for current_state in S:
+            executable_actions = mdp.get_possible_actions(P, current_state)
+            actions_values = {action : 0 for action in executable_actions} # Dictionary with value for each action is a specific state
 
-            actions_values = {action : 0 for action in A} # Dictionary with value for each action is a specific state
-
-            for a in A:
+            for a in executable_actions:
 
                 # Get probabilities and rewards for current state
                 probabilities = list(P[current_state][a].values())
                 rewards = list(R[current_state][a].values())
 
                 # Calculate sum(Pa(s,s')(Ra(s,s') + dicount_factor*V_i(s')))
-                value = sum([prob * (reward + dicount_factor * V[current_state]) for prob, reward in zip(probabilities, rewards)])
+                value = sum([prob * (reward + discount_factor * V[current_state]) for prob, reward in zip(probabilities, rewards)])
                 actions_values[a] = value
             
-            print("Calculated values for state", current_state, ":", actions_values)
+                print("Calculated values for state", current_state, ":", actions_values)
 
             # Find the biggest value and its action
             max_value = max(list(actions_values.values()))
@@ -98,25 +95,25 @@ def value_iteration(mdp_object, threshold):
 
             V_new[current_state] = max_value # Set maximum of calculated values as a new value for current_state
 
-            # Termination condition
-            print("Old value function:")
-            print_value_function(V)
-            print('\n')
-            print("New value function:")
-            print_value_function(V_new)
-            print("\n")
-            if (all( abs(V[s] - V_new[s]) < threshold for s in S)):
-                print("Number of iterations: ", i)
-                return V_new, policy
-            V = copy.deepcopy(V_new)
+        # Termination condition
+        # print("Old value function:")
+        # print_value_function(V)
+        # print('\n')
+        # print("New value function:")
+        # print_value_function(V_new)
+        # print("\n")
 
-def value_iteration_finite(mdp_object, finite_horizon):
+        # Check convergence
+        if (all( abs(V[s] - V_new[s]) < threshold for s in S)):
+            print("Number of iterations: ", i)
+            return V_new, policy
+        
+        V = copy.deepcopy(V_new)
+
+def value_iteration_finite(mdp_object, finite_horizon, discount_factor):
 
     # Extract MDP properties
     S, A, R, P = mdp_object.get_properties()
-
-    dicount_factor = 0.9 # For comparisson
-    # discount_factor = 1
 
     # Initialize the value for each state to 0
     V = {s : 0 for s in S}
@@ -127,21 +124,23 @@ def value_iteration_finite(mdp_object, finite_horizon):
     i = 0
 
 
-    for x in iterations:
+    for _ in iterations:
         i += 1
 
         for current_state in S:
 
-            actions_values = {action : 0 for action in A} # Dictionary with value for each action is a specific state
+            executable_actions = mdp.get_possible_actions(P, current_state)
 
-            for a in A:
+            actions_values = {action : 0 for action in executable_actions} # Dictionary with value for each action is a specific state
+
+            for a in executable_actions:
 
                 # Get probabilities and rewards for current state
                 probabilities = list(P[current_state][a].values())
                 rewards = list(R[current_state][a].values())
 
                 # Calculate sum(Pa(s,s')(Ra(s,s') + dicount_factor*V_i(s')))
-                value = sum([prob * (reward + dicount_factor * V[current_state]) for prob, reward in zip(probabilities, rewards)])
+                value = sum([prob * (reward + discount_factor * V[current_state]) for prob, reward in zip(probabilities, rewards)])
                 actions_values[a] = value
 
             # Find the biggest value and its action
@@ -159,6 +158,6 @@ def value_iteration_finite(mdp_object, finite_horizon):
             # print_value_function(V_new)
             # print("\n")
 
-            V = copy.deepcopy(V_new)
+        V = copy.deepcopy(V_new)
         
     return V_new, policy
