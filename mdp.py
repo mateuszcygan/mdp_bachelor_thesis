@@ -178,8 +178,8 @@ def calculate_num_of_states_transitions(mdp_object):
 
     return poss_states_transitions
 
-# Function that outputs the number of states with a probability of 0.0 (indicating unreachable states)
-def unreachable_states(mdp_object):
+# Function that outputs the number of states with a probability of 0.0 (isolated states)
+def isolated_states(mdp_object):
 
     states = mdp_object.states
     actions = mdp_object.actions
@@ -187,24 +187,24 @@ def unreachable_states(mdp_object):
 
     poss_states_transitions = calculate_num_of_states_transitions(mdp_object)
 
-    unreachable_overall = 0
+    isolated_overall = 0
 
     for state in states:
         executable_actions = get_possible_actions(P, state)
         for action in executable_actions:
             prob_values = list(P[state][action].values())
-            unreachable = 0
+            isolated = 0
             for prob_value in prob_values:
                 if prob_value == 0.0:
-                    unreachable += 1
-            # print("Unreachable states:", unreachable)
-            unreachable_overall += unreachable
+                    isolated += 1
+            # print("Isolated states:", isolated)
+            isolated_overall += isolated
 
     print("tran_to_other_states(incl prob=0):", poss_states_transitions)
-    print("unreach_states(prob=0):", unreachable_overall)
+    print("isolated_states(prob=0):", isolated_overall)
     
-    unreachable_percentage = unreachable_overall/poss_states_transitions
-    print("percent_of_unreach_states:", unreachable_percentage)
+    isolated_percentage = isolated_overall/poss_states_transitions
+    print("percent_of_isolated_states:", isolated_percentage)
     print("\n")
 
 # Function that outputs the number of following states with a rewards of 0.0
@@ -227,7 +227,7 @@ def zero_rewards(mdp_object):
             for reward in rewards:
                 if reward == 0:
                     zero += 1
-            # print("Unreachable states:", unreachable)
+            # print("Zero rewards:", zero)
             zero_overall += zero
 
     print("num_all_rewards:", rewards_num)
@@ -276,7 +276,7 @@ def normalize_mdp_probabilities(mdp):
                 except ZeroDivisionError:
                     P[current_state][action][foll_state] = 0
 
-# Thinning the reachable states in the MDP by using state_sparsity_rate - percentage of states that should be unreached
+# Thinning the isolated states in the MDP by using state_sparsity_rate - percentage of states that should be isolated
 def sparse_mdp_states(mdp, state_sparsity_rate):
 
     S = mdp.states
@@ -294,7 +294,7 @@ def sparse_mdp_states(mdp, state_sparsity_rate):
                 possible_prob_values = [0.0]  # Array containing 0.0 probability and probability of transitioning to following state (used for decision-making)
                 prob_value = P[current_state][action][following_state]
 
-                # If any of the following states is already unreachable, don't change it
+                # If any of the following states is already isolated, don't change it
                 if prob_value == 0:
                     continue
 
