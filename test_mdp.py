@@ -19,5 +19,11 @@ class TestMdpSets(unittest.TestCase):
     def test_generate_actions_type(self):
         self.assertIsInstance(self.actions, list)  # Assert that actions is a list
 
+class TestSparseMdpStates(unittest.TestCase):
+
+    def setUp(self):
+        A = ['a0', 'a1', 'a2']
+        S = ['s0', 's1', 's2', 's3']
+
 if __name__ == '__main__':
     unittest.main()
