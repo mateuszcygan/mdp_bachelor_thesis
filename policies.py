@@ -1,5 +1,6 @@
 import mdp
 import random
+import copy
 
 # RANDOM POLICY
 
@@ -55,7 +56,7 @@ def print_value_function(V):
     for state, value in V.items():
         print(state, ":", value)
 
-def value_iteration(mdp_object):
+def value_iteration(mdp_object, threshold):
 
     # Extract MDP properties
     S, A, R, P = mdp_object.get_properties()
@@ -104,10 +105,10 @@ def value_iteration(mdp_object):
             print("New value function:")
             print_value_function(V_new)
             print("\n")
-            if (all( abs(V[s] - V_new[s]) < 0.001 for s in S)):
+            if (all( abs(V[s] - V_new[s]) < threshold for s in S)):
                 print("Number of iterations: ", i)
                 return V_new, policy
-            V = V_new.copy()
+            V = copy.deepcopy(V_new)
 
 def value_iteration_finite(mdp_object, finite_horizon):
 
@@ -127,7 +128,6 @@ def value_iteration_finite(mdp_object, finite_horizon):
 
 
     for x in iterations:
-        print("Value of x:", x)
         i += 1
 
         for current_state in S:
@@ -143,8 +143,6 @@ def value_iteration_finite(mdp_object, finite_horizon):
                 # Calculate sum(Pa(s,s')(Ra(s,s') + dicount_factor*V_i(s')))
                 value = sum([prob * (reward + dicount_factor * V[current_state]) for prob, reward in zip(probabilities, rewards)])
                 actions_values[a] = value
-            
-            print("Calculated values for state", current_state, ":", actions_values)
 
             # Find the biggest value and its action
             max_value = max(list(actions_values.values()))
@@ -154,13 +152,13 @@ def value_iteration_finite(mdp_object, finite_horizon):
 
             V_new[current_state] = max_value # Set maximum of calculated values as a new value for current_state
 
-            print("Old value function:")
-            print_value_function(V)
-            print('\n')
-            print("New value function:")
-            print_value_function(V_new)
-            print("\n")
+            # print("Old value function:")
+            # print_value_function(V)
+            # print('\n')
+            # print("New value function:")
+            # print_value_function(V_new)
+            # print("\n")
 
-            V = V_new.copy()
+            V = copy.deepcopy(V_new)
         
     return V_new, policy
