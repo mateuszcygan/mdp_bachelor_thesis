@@ -164,6 +164,7 @@ def createMDP():
 
 # SPARSE DENSE
 
+# Calculate number of possible states' transitions
 def calculate_num_of_states_transitions(mdp_object):
 
     P = mdp_object.probabilities
@@ -213,6 +214,7 @@ def zero_rewards(mdp_object):
 
     states = mdp_object.states
     actions = mdp_object.actions
+    P = mdp_object.probabilities
     R = mdp_object.rewards
 
     rewards_num = len(states)*len(states)*len(actions)
@@ -220,7 +222,8 @@ def zero_rewards(mdp_object):
     zero_overall = 0
 
     for s in states:
-        for a in actions:
+        executable_actions = get_possible_actions(P, s)
+        for a in executable_actions:
             rewards = list(R[s][a].values())
             zero = 0
             for reward in rewards:
@@ -243,7 +246,8 @@ def random_following_state(mdp):
     P = mdp.probabilities
 
     for current_state in S:
-        for action in A:
+        executable_actions = get_possible_actions(P, current_state)
+        for action in executable_actions:
             transition_prob = list(P[current_state][action].values())
 
             # If all probabilities are zero (no following state), choose randomly one action and assign probability 1.0 to it
@@ -259,7 +263,8 @@ def normalize_mdp_probabilities(mdp):
     P = mdp.probabilities
 
     for current_state in S:
-        for action in A:
+        executable_actions = get_possible_actions(P, current_state)
+        for action in executable_actions:
 
             # Calculate the total value of probabilities for certain action
             action_prob = list(P[current_state][action].values())
@@ -284,7 +289,8 @@ def sparse_mdp_states(mdp, state_sparsity_rate):
     sparsity_weights = [state_sparsity_rate, old_probability_weight] # Sparse weights for 0.0 probability and probability of going over to following state
 
     for current_state in S:
-        for action in A:
+        executable_actions = get_possible_actions(P, current_state)
+        for action in executable_actions:
             for following_state in S:
 
                 possible_prob_values = [0.0]  # Array containing 0.0 probability and probability of transitioning to following state (used for decision-making)
