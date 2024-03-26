@@ -250,7 +250,12 @@ def random_following_state(mdp):
 
             # If all probabilities are zero (no following state), choose randomly one action and assign probability 1.0 to it
             if sum(transition_prob) == 0:
-                random_state = random.choice(S)
+                
+                # Following state with probability equal 1.0 shouldn't be the current state (deadlock)
+                following_states = S.copy()
+                following_states.remove(current_state)
+
+                random_state = random.choice(following_states)
                 P[current_state][action][random_state] = 1.0
 
 # Normalizing probabilities for following states of a certain MDP
