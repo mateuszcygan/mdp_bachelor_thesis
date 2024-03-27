@@ -51,15 +51,21 @@ def random_policy(mdp_object, tran_num):
 
 
 # VALUE ITERATION
-# Printing formatted version of result from value iteration
+# Prints formatted version of result from value iteration
 def print_value_function(V):
     for state, value in V.items():
         print(state, ":", value)
 
+# Prints action that was chosen from policy and its calculated value in value function
+def print_action_policy_value(S, policy, V):
+    for state in S:
+        print(policy[state], ":", V[state], end = " ")
+    print("\n")
+
 def value_iteration(mdp_object, threshold, discount_factor):
 
     # Extract MDP properties
-    S, A, R, P = mdp_object.get_properties()
+    S, A, P, R = mdp_object.get_properties()
 
     # Initialize the value for each state to 0
     V = {s : 0 for s in S}
@@ -80,12 +86,12 @@ def value_iteration(mdp_object, threshold, discount_factor):
                 # Get probabilities and rewards for current state
                 probabilities = list(P[current_state][a].values())
                 rewards = list(R[current_state][a].values())
+                values = list(V.values())
 
                 # Calculate sum(Pa(s,s')(Ra(s,s') + dicount_factor*V_i(s')))
-                value = sum([prob * (reward + discount_factor * V[current_state]) for prob, reward in zip(probabilities, rewards)])
+                value = sum([prob * (reward + discount_factor * value) for prob, reward, value in zip(probabilities, rewards, values)])
+                # print(list(zip(probabilities, rewards, values)))
                 actions_values[a] = value
-            
-                print("Calculated values for state", current_state, ":", actions_values)
 
             # Find the biggest value and its action
             max_value = max(list(actions_values.values()))
@@ -105,15 +111,17 @@ def value_iteration(mdp_object, threshold, discount_factor):
 
         # Check convergence
         if (all( abs(V[s] - V_new[s]) < threshold for s in S)):
-            print("Number of iterations: ", i)
+            # print("Number of iterations: ", i)
             return V_new, policy
         
+        # print_action_policy_value(S, policy, V)
+
         V = copy.deepcopy(V_new)
 
 def value_iteration_finite(mdp_object, finite_horizon, discount_factor):
 
     # Extract MDP properties
-    S, A, R, P = mdp_object.get_properties()
+    S, A, P, R = mdp_object.get_properties()
 
     # Initialize the value for each state to 0
     V = {s : 0 for s in S}
@@ -121,8 +129,7 @@ def value_iteration_finite(mdp_object, finite_horizon, discount_factor):
     policy = {s : None for s in S} # Dictionary that represents calculated policy
 
     iterations = range(finite_horizon) # Number of iterations
-    i = 0
-
+    i = 0 # Variable that represents iteration's number (testing)
 
     for _ in iterations:
         i += 1
@@ -135,15 +142,14 @@ def value_iteration_finite(mdp_object, finite_horizon, discount_factor):
 
             for a in executable_actions:
 
-                # Get probabilities and rewards for current state
                 probabilities = list(P[current_state][a].values())
                 rewards = list(R[current_state][a].values())
+                values = list(V.values())
 
                 # Calculate sum(Pa(s,s')(Ra(s,s') + dicount_factor*V_i(s')))
-                value = sum([prob * (reward + discount_factor * V[current_state]) for prob, reward in zip(probabilities, rewards)])
+                value = sum([prob * (reward + discount_factor * value) for prob, reward, value in zip(probabilities, rewards, values)])
                 actions_values[a] = value
-
-            # Find the biggest value and its action
+            
             max_value = max(list(actions_values.values()))
             biggest_value_action = list(actions_values.keys())[list(actions_values.values()).index(max_value)]
 
@@ -151,13 +157,15 @@ def value_iteration_finite(mdp_object, finite_horizon, discount_factor):
 
             V_new[current_state] = max_value # Set maximum of calculated values as a new value for current_state
 
-            # print("Old value function:")
-            # print_value_function(V)
-            # print('\n')
-            # print("New value function:")
-            # print_value_function(V_new)
-            # print("\n")
+        # Termination condition
+        # print("Old value function:")
+        # print_value_function(V)
+        # print('\n')
+        # print("New value function:")
+        # print_value_function(V_new)
+        # print("\n")
 
         V = copy.deepcopy(V_new)
+       # print_action_policy_value(S, policy, V)
         
     return V_new, policy
