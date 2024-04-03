@@ -27,20 +27,22 @@ class TestEssentialFunctions(unittest.TestCase):
             "s1": {"a1": {"s0": 0.4, "s1": 0.6}},
         }
 
-    def test_assign_initial_probabilities(self):
+    # Test if initial probabilities are initially correct assigned (equal probabilities dependent on states' number)
+    def test_assign_initial_approx_probabilities(self):
 
         expected_probabilities = {
             "s0": {"a0": {"s0": 0.5, "s1": 0.5}, "a1": {"s0": 0.5, "s1": 0.5}},
             "s1": {"a1": {"s0": 0.5, "s1": 0.5}},
         }
 
-        initial_probabilities = algorithm.assign_initial_probabilities(
+        initial_probabilities = algorithm.assign_initial_approx_probabilities(
             self.states, self.probabilities
         )
 
         self.assertDictEqual(expected_probabilities, initial_probabilities)
 
-    def test_execute_action(self):
+    # Test if next state will be the one with probability assigned to 1.0
+    def test_execute_action_small(self):
 
         expected_next_state = "s1"
 
@@ -49,6 +51,55 @@ class TestEssentialFunctions(unittest.TestCase):
         )
 
         self.assertEqual(expected_next_state, next_state)
+
+    # Test if the approximated probability updates correctly (MDP with 4 states chosen due to calculation of new probability - 0.25 to 0.2 and one to 0.4)
+    def test_update_approx_prob(self):
+
+        # Create a MDP with 4 states and 2 actions
+        test_mdp = mdp.createMDP(4, 2, 0, 3)
+
+        # Create elements for "update_approx_prob" function
+        approximated_prob = algorithm.assign_initial_approx_probabilities(
+            test_mdp.states, test_mdp.probabilities
+        )
+        states_hits = {
+            s: {a: {s: 0 for s in test_mdp.states} for a in test_mdp.actions}
+            for s in test_mdp.states
+        }
+        current_state = "s1"
+        executed_action = "a1"
+
+        ## Assume that after execution of executed_action, the transition took place to s1
+        states_hits[current_state][executed_action]["s1"] = 1
+
+        approximated_prob = algorithm.update_approx_prob(
+            approximated_prob,
+            states_hits,
+            current_state,
+            executed_action,
+            test_mdp.states,
+        )
+
+        expected_approx_prob = {
+            "s0": {
+                "a0": {"s0": 0.25, "s1": 0.25, "s2": 0.25, "s3": 0.25},
+                "a1": {"s0": 0.25, "s1": 0.25, "s2": 0.25, "s3": 0.25},
+            },
+            "s1": {
+                "a0": {"s0": 0.25, "s1": 0.25, "s2": 0.25, "s3": 0.25},
+                "a1": {"s0": 0.2, "s1": 0.4, "s2": 0.2, "s3": 0.2},
+            },
+            "s2": {
+                "a0": {"s0": 0.25, "s1": 0.25, "s2": 0.25, "s3": 0.25},
+                "a1": {"s0": 0.25, "s1": 0.25, "s2": 0.25, "s3": 0.25},
+            },
+            "s3": {
+                "a0": {"s0": 0.25, "s1": 0.25, "s2": 0.25, "s3": 0.25},
+                "a1": {"s0": 0.25, "s1": 0.25, "s2": 0.25, "s3": 0.25},
+            },
+        }
+
+        self.assertDictEqual(approximated_prob, expected_approx_prob)
 
 
 # class TestLearnProbabilities(unittest.TestCase):
