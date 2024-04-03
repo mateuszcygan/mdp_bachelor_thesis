@@ -8,6 +8,8 @@ import mdp
 class TestEssentialFunctions(unittest.TestCase):
 
     def setUp(self):
+
+        # Define MDP sets for initial probabilities test
         self.states = ["s0", "s1"]
         self.actions = ["a0", "a1"]
         self.probabilities = {
@@ -17,6 +19,12 @@ class TestEssentialFunctions(unittest.TestCase):
         self.rewards = {
             "s0": {"a0": {"s0": 3, "s1": 4}, "a1": {"s0": 0, "s1": -2}},
             "s1": {"a1": {"s0": 2, "s1": -3}},
+        }
+
+        # Define MDP's probabilities set for execution of an action
+        self.probabilities_small = {
+            "s0": {"a0": {"s0": 1.0, "s1": 0}, "a1": {"s0": 0, "s1": 1.0}},
+            "s1": {"a1": {"s0": 0.4, "s1": 0.6}},
         }
 
     def test_assign_initial_probabilities(self):
@@ -31,6 +39,16 @@ class TestEssentialFunctions(unittest.TestCase):
         )
 
         self.assertDictEqual(expected_probabilities, initial_probabilities)
+
+    def test_execute_action(self):
+
+        expected_next_state = "s1"
+
+        next_state = algorithm.execute_action(
+            self.states, self.probabilities_small, "s0", "a1"
+        )
+
+        self.assertEqual(expected_next_state, next_state)
 
 
 # class TestLearnProbabilities(unittest.TestCase):
