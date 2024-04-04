@@ -22,7 +22,7 @@ def assign_initial_approx_probabilities(states, probabilities):
     return approximated_prob
 
 
-def execute_action(states, probabilities, current_state, executed_action):
+def execute_action(states, probabilities, current_state, executed_action, states_hits):
 
     # Get probabilities of transitioning to other states (needed for transition execution)
     states_prob = mdp.get_foll_states_prob_values(
@@ -31,7 +31,9 @@ def execute_action(states, probabilities, current_state, executed_action):
 
     next_state = random.choices(states, weights=states_prob)[0]
 
-    return next_state
+    states_hits[current_state][executed_action][next_state] += 1
+
+    return next_state, states_hits
 
 
 def update_approx_prob(
@@ -88,8 +90,8 @@ def systematic_learning(
             action_to_execute_index
         ]
 
-        next_state = execute_action(
-            states, probabilities, current_state, executed_action
+        next_state, states_hits = execute_action(
+            states, probabilities, current_state, executed_action, states_hits
         )
 
         state_actions[current_state][
@@ -474,6 +476,5 @@ def my_algorithm(mdp_object, sys_learn_iterations, least_known_iterations):
     approximated_prob = systematic_learning(
         S, P, approximated_prob, states_hits, current_state, sys_learn_iterations
     )
-    mdp.print_mdp_details(approximated_prob)
 
     return approximated_prob
