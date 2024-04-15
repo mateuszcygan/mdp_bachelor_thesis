@@ -22,6 +22,18 @@ def assign_initial_approx_probabilities(states, probabilities):
     return approximated_prob
 
 
+def create_states_hits_dictionary(probabilities):
+    states_hits = copy.deepcopy(probabilities)
+
+    # Set all values to 0
+    for state in states_hits:
+        for action in states_hits[state]:
+            for next_state in states_hits[state][action]:
+                states_hits[state][action][next_state] = 0
+
+    return states_hits
+
+
 def execute_action(states, probabilities, current_state, executed_action, states_hits):
 
     # Get probabilities of transitioning to other states (needed for transition execution)
@@ -108,6 +120,10 @@ def systematic_learning(
 
 
 # EXPLORE LEAST KNOWN STATE
+
+
+def explore_least_known_states():
+    return
 
 
 # Calculates number of hits for each of the states
@@ -468,7 +484,9 @@ def my_algorithm(mdp_object, sys_learn_iterations, least_known_iterations):
     approximated_prob = assign_initial_approx_probabilities(S, P)
 
     # Store how many times a transition to a certain state took place
-    states_hits = {s: {a: {s: 0 for s in S} for a in A} for s in S}
+
+    states_hits = create_states_hits_dictionary(P)
+    mdp.print_mdp_details(states_hits)
 
     current_state = "s0"  # Start at state 's0'
     next_states = []  # Array that stores sequence of reached states
