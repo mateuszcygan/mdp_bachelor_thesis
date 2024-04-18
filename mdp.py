@@ -113,6 +113,15 @@ def generate_prob(states, actions):
     return prob_dict
 
 
+# For debugging cases - generation of specific mdps
+def set_all_values_to_zero(d):
+    for key, value in d.items():
+        if isinstance(value, dict):
+            set_all_values_to_zero(value)
+        else:
+            d[key] = 0
+
+
 # Going over to another state after selecting the action
 def state_transition(P, current_state, chosen_action):
     prob_current_action = list(
