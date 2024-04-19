@@ -5,6 +5,26 @@ import mdp
 # Idee fuer spaeter:
 # number of states hits einbeziehen, um die Loesung zu entwickeln, die auch selten besuchte Zustaende berueksichtigt
 
+# max_value is in this veriosn the min value - we want to get a path with the biggest probability
+max_value = -sys.maxsize - 1
+
+
+def print_shortest_path_table(shortest_path):
+    for state, entry in shortest_path.items():
+        probability = entry.probability
+        previous_state = entry.previous_state
+        executed_action = entry.executed_action_in_prev_state
+        print(f"{state} : {probability}, {previous_state}, {executed_action}")
+
+
+class ShortestPathEntry:
+    def __init__(
+        self, probability=None, previous_state=None, executed_action_in_prev_state=None
+    ):
+        self.probability = probability
+        self.previous_state = previous_state
+        self.executed_action_in_prev_state = executed_action_in_prev_state
+
 
 # Returns an action with the biggest probability between two states
 # Note: After each action it possible to go over to each of the states (each state connected with each state),
@@ -54,34 +74,46 @@ def neighbour_biggest_prob(unvisited_states, approximated_prob, current_visit_st
     return neighbour_prob
 
 
+# Updates the values of shortest path
+# curr_end_state_prob - if end_state already reached, the probability stored in this variable (for comparisson - necessity of further calculations)
+def update_shortest_path(
+    current_visit_state, shortest_path, neighbours, curr_end_state_prob
+):
+    return
+
+
 def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
+
+    S = mdp_object.states
 
     unvisited_states = list(mdp_object.states)
 
     shortest_path = {}
-    shortest_path_value = 1  # For comparisson if it is required to calculate further
+
+    # Initialize the shortest path table
+    for state in S:
+        shortest_path[state] = ShortestPathEntry(max_value, None, None)
+    shortest_path[start_state].probability = 1
+
+    print_shortest_path_table(shortest_path)
+
+    shortest_path_value = -1  # For comparisson if it is required to calculate further
 
     # previous_nodes - dict that stores the trajectory of the current best known path for each node
     previous_nodes = {}
-
-    max_value = sys.maxsize
-
-    for node in unvisited_states:
-        shortest_path[node] = max_value
-
-    # Initialize the starting node with 0
-    # shortest_path - {probability : {previous_state : executed_action}}
-    shortest_path[start_state] = {0: {None: None}}
 
     # Initialize the current visiting node to node from which we start
     current_visit_state = start_state
 
     # Execute the algorithm until the end_node is visited
-    while end_state in unvisited_states:
+    # while end_state in unvisited_states:
+    for i in range(1):
 
-        # Extract probabilities to neighbours that haven't been visited yet
-        unvisited_neighbours = neighbour_biggest_prob(
+        # Extract probabilities to neighbours (only states (neighbours) that haven't been visited are considered)
+        neighbours = neighbour_biggest_prob(
             unvisited_states, approximated_prob, current_visit_state
         )
-
+        update_shortest_path(
+            current_visit_state, shortest_path, neighbours, shortest_path_value
+        )
     return
