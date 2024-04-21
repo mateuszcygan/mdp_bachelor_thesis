@@ -114,9 +114,42 @@ def neighbour_biggest_prob(unvisited_states, approximated_prob, current_visit_st
 # Updates the values of shortest path
 # shortest_path_value - if end_state already reached, the probability stored in this variable (for comparisson - necessity of further calculations)
 def update_shortest_path(
-    current_visit_state, shortest_path, neighbours, shortest_path_value
+    start_state, current_visit_state, shortest_path_value, shortest_path, neighbours
 ):
-    print_neigh_prob_table(current_visit_state, neighbours)
+    for neighbour, entry in neighbours:
+
+        path_value = entry.probability
+
+        # Neighbour state directly connected to start_state
+        if shortest_path[neighbour].previous_state == start_state:
+            if entry.probability > shortest_path[neighbour].probability:
+
+                shortest_path[neighbour].probability = entry.probability
+                shortest_path[neighbour].previous_state = current_visit_state
+                shortest_path[neighbour].executed_action_in_prev_state = entry.action
+
+        # Neighbour state for which no path was found before
+        if shortest_path[neighbour].previous_state == None:
+            if current_visit_state == start_state:
+
+                shortest_path[neighbour].probability = entry.probability
+                shortest_path[neighbour].previous_state = current_visit_state
+                shortest_path[neighbour].executed_action_in_prev_state = entry.action
+
+            # Neighbour state for which no path was found before and the path leads NOT DIRECTLY (one transition) from start state
+            else:
+                # Extract the state from which path leads to curr_visit_state
+                predecessor = shortest_path[current_visit_state].previous_state
+
+                while predecessor != start_state:
+
+                    # Extract the state from which path leads to start_state
+                    path_value = path_value * shortest_path[predecessor].probability
+                    predecessor = shortest_path[predecessor].previous_state
+
+                shortest_path[neighbour].probability = path_value
+                shortest_path[neighbour].previous_state = current_visit_state
+                shortest_path[neighbour].executed_action_in_prev_state = entry.action
 
 
 def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
