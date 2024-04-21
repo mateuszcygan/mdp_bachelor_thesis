@@ -10,11 +10,22 @@ max_value = -sys.maxsize - 1
 
 
 def print_shortest_path_table(shortest_path):
+    print("Shortest path table:")
     for state, entry in shortest_path.items():
         probability = entry.probability
         previous_state = entry.previous_state
         executed_action = entry.executed_action_in_prev_state
         print(f"{state} : {probability}, {previous_state}, {executed_action}")
+    print("\n")
+
+
+def print_neigh_prob_table(curr_visit_state, neighbour_prob):
+    print(curr_visit_state, "neighbours:")
+    for state, entry in neighbour_prob.items():
+        action = entry.action
+        probability = entry.probability
+        print(f"{state} : {action}, {probability}")
+    print("\n")
 
 
 class ShortestPathEntry:
@@ -24,6 +35,29 @@ class ShortestPathEntry:
         self.probability = probability
         self.previous_state = previous_state
         self.executed_action_in_prev_state = executed_action_in_prev_state
+
+
+def create_shortest_path_table(states, start_state):
+    shortest_path = {}
+
+    # Initialize the shortest path table
+    for state in states:
+        shortest_path[state] = ShortestPathEntry(max_value, None, None)
+    shortest_path[start_state].probability = 1
+    return shortest_path
+
+
+class NeighbourProbabilityEntry:
+    def __init__(self, action=None, probability=None):
+        self.action = action
+        self.probability = probability
+
+
+def create_neigh_prob_table(unvisited_states):
+    neighbour_prob = {
+        state: NeighbourProbabilityEntry(None, None) for state in unvisited_states
+    }
+    return neighbour_prob
 
 
 # Returns an action with the biggest probability between two states
@@ -37,9 +71,9 @@ def neighbour_biggest_prob(unvisited_states, approximated_prob, current_visit_st
     # We shouldn't consider "the loop" transition - going again to the same state from which we start
     unvisited_states_copy.remove(current_visit_state)
 
-    # neihbour_prob - stores the biggest probability to neighbour (2) and responsible for it action (1)
-    # state = { (1)action : (2)probability}
-    neighbour_prob = {state: {None: None} for state in unvisited_states_copy}
+    neighbour_prob = create_neigh_prob_table(unvisited_states_copy)
+
+    print_neigh_prob_table(current_visit_state, neighbour_prob)
 
     # Retreive actions that are possible for curr_visited_state
     poss_actions = mdp.get_possible_actions(approximated_prob, current_visit_state)
@@ -55,16 +89,21 @@ def neighbour_biggest_prob(unvisited_states, approximated_prob, current_visit_st
 
             new_max_prob = approximated_prob[current_visit_state][action][state]
 
+            # Note: if all probabilities are equal to zero, NeighbourProbabilityEntry values remain None
             if new_max_prob > max_prob:
 
                 max_action = action
                 max_prob = new_max_prob
 
-                neighbour_prob[state] = {max_action: max_prob}
+                neighbour_prob[state].action = max_action
+                neighbour_prob[state].probability = max_prob
 
-    # Check if any value in the dictionary is {None: None} - it is not possible (prob = 0.0) to reach a state through any of available actions
+    # Check if both values in NeighbourProbabilityEntry are equals to None
     no_neighbours = [
-        state for state, value in neighbour_prob.items() if value == {None: None}
+        state
+        for state in unvisited_states_copy
+        if neighbour_prob[state].action == None
+        and neighbour_prob[state].probability == None
     ]
 
     # Remove the "no-neighbours" from the dictionary
@@ -75,29 +114,28 @@ def neighbour_biggest_prob(unvisited_states, approximated_prob, current_visit_st
 
 
 # Updates the values of shortest path
-# curr_end_state_prob - if end_state already reached, the probability stored in this variable (for comparisson - necessity of further calculations)
+# shortest_path_value - if end_state already reached, the probability stored in this variable (for comparisson - necessity of further calculations)
 def update_shortest_path(
-    current_visit_state, shortest_path, neighbours, curr_end_state_prob
+    current_visit_state, shortest_path, neighbours, shortest_path_value
 ):
-    return
+    print(neighbours)
+
+    for neighbour in neighbours:
+        prob = neighbours[neighbour]
+        print(prob)
 
 
 def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
 
     S = mdp_object.states
-
     unvisited_states = list(mdp_object.states)
 
-    shortest_path = {}
-
-    # Initialize the shortest path table
-    for state in S:
-        shortest_path[state] = ShortestPathEntry(max_value, None, None)
-    shortest_path[start_state].probability = 1
-
+    shortest_path = create_shortest_path_table(S, start_state)
     print_shortest_path_table(shortest_path)
 
-    shortest_path_value = -1  # For comparisson if it is required to calculate further
+    shortest_path_value = (
+        -1
+    )  # For comparisson if it is required to calculate further (probability of reaching the end state)
 
     # previous_nodes - dict that stores the trajectory of the current best known path for each node
     previous_nodes = {}
@@ -113,7 +151,9 @@ def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
         neighbours = neighbour_biggest_prob(
             unvisited_states, approximated_prob, current_visit_state
         )
-        update_shortest_path(
-            current_visit_state, shortest_path, neighbours, shortest_path_value
-        )
+        print_neigh_prob_table(current_visit_state, neighbours)
+
+        # update_shortest_path(
+        #     current_visit_state, shortest_path, neighbours, shortest_path_value
+        # )
     return
