@@ -5,27 +5,8 @@ import mdp
 # Idee fuer spaeter:
 # number of states hits einbeziehen, um die Loesung zu entwickeln, die auch selten besuchte Zustaende berueksichtigt
 
-# max_value is in this veriosn the min value - we want to get a path with the biggest probability
+# max_value is in this version the min value - we want to get a path with the biggest probability
 max_value = -sys.maxsize - 1
-
-
-def print_shortest_path_table(shortest_path):
-    print("Shortest path table:")
-    for state, entry in shortest_path.items():
-        probability = entry.probability
-        previous_state = entry.previous_state
-        executed_action = entry.executed_action_in_prev_state
-        print(f"{state} : {probability}, {previous_state}, {executed_action}")
-    print("\n")
-
-
-def print_neigh_prob_table(curr_visit_state, neighbour_prob):
-    print(curr_visit_state, "neighbours:")
-    for state, entry in neighbour_prob.items():
-        action = entry.action
-        probability = entry.probability
-        print(f"{state} : {action}, {probability}")
-    print("\n")
 
 
 class ShortestPathEntry:
@@ -47,6 +28,16 @@ def create_shortest_path_table(states, start_state):
     return shortest_path
 
 
+def print_shortest_path_table(shortest_path):
+    print("Shortest path table:")
+    for state, entry in shortest_path.items():
+        probability = entry.probability
+        previous_state = entry.previous_state
+        executed_action = entry.executed_action_in_prev_state
+        print(f"{state} : {probability}, {previous_state}, {executed_action}")
+    print("\n")
+
+
 class NeighbourProbabilityEntry:
     def __init__(self, action=None, probability=None):
         self.action = action
@@ -58,6 +49,15 @@ def create_neigh_prob_table(unvisited_states):
         state: NeighbourProbabilityEntry(None, None) for state in unvisited_states
     }
     return neighbour_prob
+
+
+def print_neigh_prob_table(curr_visit_state, neighbour_prob):
+    print(curr_visit_state, "neighbours:")
+    for state, entry in neighbour_prob.items():
+        action = entry.action
+        probability = entry.probability
+        print(f"{state} : {action}, {probability}")
+    print("\n")
 
 
 # Returns an action with the biggest probability between two states
@@ -72,8 +72,6 @@ def neighbour_biggest_prob(unvisited_states, approximated_prob, current_visit_st
     unvisited_states_copy.remove(current_visit_state)
 
     neighbour_prob = create_neigh_prob_table(unvisited_states_copy)
-
-    print_neigh_prob_table(current_visit_state, neighbour_prob)
 
     # Retreive actions that are possible for curr_visited_state
     poss_actions = mdp.get_possible_actions(approximated_prob, current_visit_state)
@@ -118,11 +116,7 @@ def neighbour_biggest_prob(unvisited_states, approximated_prob, current_visit_st
 def update_shortest_path(
     current_visit_state, shortest_path, neighbours, shortest_path_value
 ):
-    print(neighbours)
-
-    for neighbour in neighbours:
-        prob = neighbours[neighbour]
-        print(prob)
+    print_neigh_prob_table(current_visit_state, neighbours)
 
 
 def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
