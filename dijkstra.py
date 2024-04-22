@@ -243,12 +243,11 @@ def get_shortest_path_actions(shortest_path_table, end_state):
     return shortest_path_actions
 
 
-def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
+def dijkstra_alg(mdp_object_states, approximated_prob, start_state, end_state):
 
-    S = mdp_object.states
-    unvisited_states = list(mdp_object.states)
+    unvisited_states = list(mdp_object_states)
 
-    shortest_path = create_shortest_path_table(S, start_state)
+    shortest_path = create_shortest_path_table(mdp_object_states, start_state)
     print_shortest_path_table(shortest_path)
 
     shortest_path_value = (

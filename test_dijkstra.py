@@ -227,8 +227,7 @@ class TestDijkstra(unittest.TestCase):
         asserEqual_shortest_path(self, shortest_path_s2, result_s2)
 
     def test_dijkstra_alg(self):
-        max_value = -sys.maxsize - 1
-        result = dijkstra.dijkstra_alg(self.mdp_obj1, self.prob1, "s0", "s5")
+        result = dijkstra.dijkstra_alg(self.states1, self.prob1, "s0", "s5")
 
         shortest_path_actions_s0_s5 = [{"s0": "a0"}, {"s1": "a2"}, {"s4": "a2"}]
 
