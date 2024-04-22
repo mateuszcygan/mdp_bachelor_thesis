@@ -28,6 +28,25 @@ def create_shortest_path_table(states, start_state):
     return shortest_path
 
 
+def set_shortest_path_entry(
+    shortest_path_table,
+    neighbour,
+    probability,
+    previous_state,
+    executed_action_in_prev_state,
+):
+
+    shortest_path_table[neighbour].probability = probability
+    shortest_path_table[neighbour].previous_state = (
+        previous_state  # previous_state for neighbour is in the shortest_path table the state, that is visited now (current_visit_state)
+    )
+    shortest_path_table[neighbour].executed_action_in_prev_state = (
+        executed_action_in_prev_state
+    )
+
+    return shortest_path_table
+
+
 def print_shortest_path_table(shortest_path):
     print("Shortest path table:")
     for state, entry in shortest_path.items():
@@ -114,42 +133,85 @@ def neighbour_biggest_prob(unvisited_states, approximated_prob, current_visit_st
 # Updates the values of shortest path
 # shortest_path_value - if end_state already reached, the probability stored in this variable (for comparisson - necessity of further calculations)
 def update_shortest_path(
-    start_state, current_visit_state, shortest_path_value, shortest_path, neighbours
+    start_state,
+    end_state,
+    current_visit_state,
+    shortest_path_value,
+    shortest_path,
+    neighbours,
 ):
-    for neighbour, entry in neighbours:
+    for neighbour, entry in neighbours.items():
 
-        path_value = entry.probability
-
-        # Neighbour state directly connected to start_state
-        if shortest_path[neighbour].previous_state == start_state:
-            if entry.probability > shortest_path[neighbour].probability:
-
-                shortest_path[neighbour].probability = entry.probability
-                shortest_path[neighbour].previous_state = current_visit_state
-                shortest_path[neighbour].executed_action_in_prev_state = entry.action
+        new_path_value = entry.probability
+        executed_action = entry.action
+        old_path_value = shortest_path[neighbour].probability
+        previous_state = shortest_path[current_visit_state].previous_state
 
         # Neighbour state for which no path was found before
-        if shortest_path[neighbour].previous_state == None:
-            if current_visit_state == start_state:
+        # Only the case when we are in the start_state - after leaving start_state, you leave to connected states that have as previous state "start_state"
+        if previous_state == None and current_visit_state == start_state:
+            if new_path_value > old_path_value:
+                shortest_path = set_shortest_path_entry(
+                    shortest_path,
+                    neighbour,
+                    new_path_value,
+                    current_visit_state,
+                    executed_action,
+                )
+        else:
+            new_path_value = (
+                new_path_value * shortest_path[current_visit_state].probability
+            )
+            if new_path_value > old_path_value:
+                shortest_path = set_shortest_path_entry(
+                    shortest_path,
+                    neighbour,
+                    new_path_value,
+                    current_visit_state,
+                    executed_action,
+                )
 
-                shortest_path[neighbour].probability = entry.probability
-                shortest_path[neighbour].previous_state = current_visit_state
-                shortest_path[neighbour].executed_action_in_prev_state = entry.action
+        # Check if the value of shortest_path_value should be updated
+        if neighbour == end_state:
+            if shortest_path_value == -1:
+                shortest_path_value = new_path_value
+            elif new_path_value > shortest_path_value:
+                shortest_path_value = new_path_value
 
-            # Neighbour state for which no path was found before and the path leads NOT DIRECTLY (one transition) from start state
-            else:
-                # Extract the state from which path leads to curr_visit_state
-                predecessor = shortest_path[current_visit_state].previous_state
+    return shortest_path, shortest_path_value
 
-                while predecessor != start_state:
 
-                    # Extract the state from which path leads to start_state
-                    path_value = path_value * shortest_path[predecessor].probability
-                    predecessor = shortest_path[predecessor].previous_state
+# Compares if there is at least one entry in shortest_path that is bigger than the current shortest_path_value
+# True => True - there is a chance that more probable path can be found
+def compare_shortest_path_value(
+    shortest_path_table, shortest_path_value, unvisited_states
+):
+    shortest_path_value_bigger = True
+    for state, values in shortest_path_table.items():
+        if state in unvisited_states:
+            # There should be at least one value in the table among unvisited states that is bigger than shortest_path_value - chance to find more probable path
+            # If shortest_path_value is bigger or equal than each entry in the shortest_path table, there is no need to calculate further - no chance to find more probable path
+            shortest_path_value_bigger = shortest_path_value_bigger and (
+                shortest_path_value >= values.probability
+            )
 
-                shortest_path[neighbour].probability = path_value
-                shortest_path[neighbour].previous_state = current_visit_state
-                shortest_path[neighbour].executed_action_in_prev_state = entry.action
+    return shortest_path_value_bigger
+
+
+def choose_next_state_to_visit(shortest_path_table, unvisited_states):
+    max_state_value = -sys.maxsize - 1
+    max_state = None
+
+    for state, entry in shortest_path_table.items():
+        if (
+            state in unvisited_states
+            and entry.probability is not None
+            and entry.probability > max_state_value
+        ):
+            max_state_value = entry.probability
+            max_state = state
+
+    return max_state
 
 
 def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
@@ -171,16 +233,41 @@ def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
     current_visit_state = start_state
 
     # Execute the algorithm until the end_node is visited
-    # while end_state in unvisited_states:
-    for i in range(1):
+    while end_state in unvisited_states:
+        # for i in range(1):
 
-        # Extract probabilities to neighbours (only states (neighbours) that haven't been visited are considered)
+        # Extract probabilities to neighbours (only states (neighbours) that haven't been visited yet are considered)
         neighbours = neighbour_biggest_prob(
             unvisited_states, approximated_prob, current_visit_state
         )
         print_neigh_prob_table(current_visit_state, neighbours)
 
-        # update_shortest_path(
-        #     current_visit_state, shortest_path, neighbours, shortest_path_value
-        # )
-    return
+        shortest_path, shortest_path_value = update_shortest_path(
+            start_state,
+            end_state,
+            current_visit_state,
+            shortest_path_value,
+            shortest_path,
+            neighbours,
+        )
+        print_shortest_path_table(shortest_path)
+        print("shortest_path_value:", shortest_path_value)
+
+        # Check if so far calculated shortest_path_value is bigger than all entries in the shortest_path table
+        shortest_path_value_bigger = compare_shortest_path_value(
+            shortest_path, shortest_path_value, unvisited_states
+        )
+        print(shortest_path_value_bigger)
+
+        # If the shortest_path_value is bigger than all entries of unvisited states in shortest_path table, then there is no more chance to find more probable path
+        if shortest_path_value_bigger:
+            print("Termination condition")
+            return shortest_path
+
+        unvisited_states.remove(current_visit_state)
+        print("unvisited states:", unvisited_states)
+        current_visit_state = choose_next_state_to_visit(
+            shortest_path, unvisited_states
+        )
+
+    return shortest_path
