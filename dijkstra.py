@@ -290,8 +290,9 @@ def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
 
         # If the shortest_path_value is bigger than all entries of unvisited states in shortest_path table, then there is no more chance to find more probable path
         if shortest_path_value_bigger:
+            shortest_path_actions = get_shortest_path_actions(shortest_path, end_state)
             print("Termination condition")
-            return shortest_path
+            return shortest_path_actions
 
         unvisited_states.remove(current_visit_state)
         print("unvisited states:", unvisited_states)
@@ -299,4 +300,6 @@ def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
             shortest_path, unvisited_states
         )
 
-    return shortest_path
+    shortest_path_actions = get_shortest_path_actions(shortest_path, end_state)
+
+    return shortest_path_actions

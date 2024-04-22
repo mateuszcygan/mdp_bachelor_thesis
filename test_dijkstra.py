@@ -230,24 +230,9 @@ class TestDijkstra(unittest.TestCase):
         max_value = -sys.maxsize - 1
         result = dijkstra.dijkstra_alg(self.mdp_obj1, self.prob1, "s0", "s5")
 
-        s0_shortest_path_s0 = dijkstra.ShortestPathEntry(1, None, None)
-        s0_shortest_path_s1 = dijkstra.ShortestPathEntry(0.9, "s0", "a0")
-        s0_shortest_path_s2 = dijkstra.ShortestPathEntry(0.3, "s0", "a1")
-        s0_shortest_path_s3 = dijkstra.ShortestPathEntry(0.765, "s1", "a1")
-        s0_shortest_path_s4 = dijkstra.ShortestPathEntry(0.81, "s1", "a2")
-        s0_shortest_path_s5 = dijkstra.ShortestPathEntry(0.729, "s4", "a2")
-        s0_shortest_path_s6 = dijkstra.ShortestPathEntry(max_value, None, None)
+        shortest_path_actions_s0_s5 = [{"s0": "a0"}, {"s1": "a2"}, {"s4": "a2"}]
 
-        shortest_path_s0_s5 = {}
-        shortest_path_s0_s5["s0"] = s0_shortest_path_s0
-        shortest_path_s0_s5["s1"] = s0_shortest_path_s1
-        shortest_path_s0_s5["s2"] = s0_shortest_path_s2
-        shortest_path_s0_s5["s3"] = s0_shortest_path_s3
-        shortest_path_s0_s5["s4"] = s0_shortest_path_s4
-        shortest_path_s0_s5["s5"] = s0_shortest_path_s5
-        shortest_path_s0_s5["s6"] = s0_shortest_path_s6
-
-        asserEqual_shortest_path(self, result, shortest_path_s0_s5)
+        self.assertEqual(shortest_path_actions_s0_s5, result)
 
     # Function for printing purposes
     def test_print(self):
