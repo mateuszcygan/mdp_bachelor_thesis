@@ -1,7 +1,6 @@
 import random
 
 
-# SETS
 def generate_states(states_num):
 
     S = []
@@ -454,3 +453,16 @@ def print_mdp_details(dict):
         for action, value in action_dict.items():
             print(action, ":", value)
         print("\n")
+
+
+def print_mdp_sets(mdp_obj):
+    A = mdp_obj.actions
+    S = mdp_obj.states
+    P = mdp_obj.probabilities
+    R = mdp_obj.rewards
+    print("actions:", A)
+    print("states:", S)
+    print("probabilities:")
+    print_mdp_details(P)
+    print("rewards:")
+    print_mdp_details(R)
