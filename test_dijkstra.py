@@ -1,7 +1,19 @@
+import copy
+import sys
 import unittest
 
 import dijkstra
 import mdp
+
+
+def asserEqual_shortest_path(self, table1, table2):
+    for key, values in table1.items():
+        self.assertEqual(values.probability, table2[key].probability)
+        self.assertEqual(values.previous_state, table2[key].previous_state)
+        self.assertEqual(
+            values.executed_action_in_prev_state,
+            table2[key].executed_action_in_prev_state,
+        )
 
 
 class TestDijkstra(unittest.TestCase):
@@ -84,10 +96,100 @@ class TestDijkstra(unittest.TestCase):
         s3_result = dijkstra.neighbour_biggest_prob(self.states, self.prob, "s3")
         self.assertDictEqual(s3_neighbours, s3_result)
 
+    def test_update_shortest_path_table(self):
+
+        start_state = "s0"
+        current_visit_state = start_state
+        end_state = "s3"
+        shortest_path_value = -1
+        shortest_path = dijkstra.create_shortest_path_table(self.states, start_state)
+        unvisited_states = self.states
+
+        neighbours = dijkstra.neighbour_biggest_prob(
+            unvisited_states, self.prob, current_visit_state
+        )
+
+        result_s0 = dijkstra.update_shortest_path(
+            start_state,
+            end_state,
+            current_visit_state,
+            shortest_path_value,
+            shortest_path,
+            neighbours,
+        )
+
+        shortest_path_s0 = copy.deepcopy(shortest_path)
+
+        s0_neighbour_s1 = dijkstra.ShortestPathEntry(0.9, "s0", "a0")
+        s0_neighbour_s3 = dijkstra.ShortestPathEntry(0.1, "s0", "a1")
+
+        shortest_path_s0["s1"] = s0_neighbour_s1
+        shortest_path_s0["s3"] = s0_neighbour_s3
+
+        asserEqual_shortest_path(self, shortest_path_s0, result_s0)
+
+        # Remove the state "s0" from unvisited states
+        unvisited_states.remove("s0")
+
+        # Check if "s1" is correctly chosen as next visited state
+        new_current_state = dijkstra.choose_next_state_to_visit(
+            shortest_path_s0, unvisited_states
+        )
+        current_visit_state = "s1"
+        self.assertEqual(current_visit_state, new_current_state)
+
+        # Check if the shortest path is correctly updated after transitioning to "s1"
+        neighbours = dijkstra.neighbour_biggest_prob(
+            unvisited_states, self.prob, current_visit_state
+        )
+
+        result_s1 = dijkstra.update_shortest_path(
+            start_state,
+            end_state,
+            current_visit_state,
+            shortest_path_value,
+            shortest_path_s0,
+            neighbours,
+        )
+
+        s1_shortest_path_s2 = dijkstra.ShortestPathEntry(0.81, "s1", "a2")
+        shortest_path_s1 = shortest_path_s0
+        shortest_path_s1["s2"] = s1_shortest_path_s2
+
+        asserEqual_shortest_path(self, shortest_path_s1, result_s1)
+
+        # Remove the state "s1" from unvisited states
+        unvisited_states.remove("s1")
+
+        # Check if "s2" is correctly chosen as next visited state
+        new_current_state = dijkstra.choose_next_state_to_visit(
+            shortest_path_s1, unvisited_states
+        )
+        current_visit_state = "s2"
+        self.assertEqual(current_visit_state, new_current_state)
+
+        neighbours = dijkstra.neighbour_biggest_prob(
+            unvisited_states, self.prob, current_visit_state
+        )
+
+        result_s2 = dijkstra.update_shortest_path(
+            start_state,
+            end_state,
+            current_visit_state,
+            shortest_path_value,
+            shortest_path_s1,
+            neighbours,
+        )
+
+        s2_shortest_path_s3 = dijkstra.ShortestPathEntry(0.729, "s2", "a3")
+        shortest_path_s2 = shortest_path_s1
+        shortest_path_s2["s3"] = s2_shortest_path_s3
+
+        asserEqual_shortest_path(self, shortest_path_s2, result_s2)
+
     # Function for printing purposes
     def test_print(self):
-        # Print the content of self.prob
-        mdp.print_mdp_details(self.prob)
+        return
 
 
 if __name__ == "__main__":
