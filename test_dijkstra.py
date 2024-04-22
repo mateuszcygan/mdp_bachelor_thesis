@@ -8,7 +8,7 @@ import mdp
 
 def asserEqual_shortest_path(self, table1, table2):
     for key, values in table1.items():
-        self.assertEqual(values.probability, table2[key].probability)
+        self.assertAlmostEqual(values.probability, table2[key].probability, delta=1e-6)
         self.assertEqual(values.previous_state, table2[key].previous_state)
         self.assertEqual(
             values.executed_action_in_prev_state,
@@ -16,9 +16,22 @@ def asserEqual_shortest_path(self, table1, table2):
         )
 
 
+# For states where all probabilities are equal 0, the probabilty equal 1.0 is set for the set from which action is executed (loop state)
+def set_loop_states(states, actions, probabilities):
+    for state in states:
+        for action in actions:
+            values = mdp.get_foll_states_prob_values(probabilities, state, action)
+            values_sum = sum(values)
+
+            if values_sum == 0:
+                probabilities[state][action][state] = 1
+
+
 class TestDijkstra(unittest.TestCase):
 
     def setUp(self):
+
+        # Specification of first mdp to test
         self.states = ["s0", "s1", "s2", "s3"]
         self.actions = ["a0", "a1", "a2"]
         self.prob = mdp.generate_prob(self.states, self.actions)
@@ -43,13 +56,39 @@ class TestDijkstra(unittest.TestCase):
         self.prob["s2"]["a1"]["s2"] = 0.1
 
         # Set all other states to loop
-        for state in self.states:
-            for action in self.actions:
-                values = mdp.get_foll_states_prob_values(self.prob, state, action)
-                values_sum = sum(values)
+        set_loop_states(self.states, self.actions, self.prob)
 
-                if values_sum == 0:
-                    self.prob[state][action][state] = 1
+        # Specification of second mdp to test
+        self.states1 = ["s0", "s1", "s2", "s3", "s4", "s5", "s6"]
+        self.actions1 = ["a0", "a1", "a2"]
+        self.prob1 = mdp.generate_prob(self.states1, self.actions1)
+        mdp.set_all_values_to_zero(self.prob1)
+
+        self.prob1["s0"]["a0"]["s1"] = 0.9
+        self.prob1["s0"]["a0"]["s0"] = 0.1
+        self.prob1["s0"]["a1"]["s2"] = 0.3
+        self.prob1["s0"]["a1"]["s0"] = 0.7
+
+        self.prob1["s1"]["a1"]["s3"] = 0.85
+        self.prob1["s1"]["a1"]["s1"] = 0.15
+        self.prob1["s1"]["a2"]["s4"] = 0.9
+        self.prob1["s1"]["a2"]["s1"] = 0.1
+
+        self.prob1["s2"]["a0"]["s5"] = 0.5
+        self.prob1["s2"]["a0"]["s2"] = 0.5
+        self.prob1["s2"]["a1"]["s6"] = 0.9
+        self.prob1["s2"]["a1"]["s2"] = 0.1
+
+        self.prob1["s3"]["a1"]["s5"] = 0.85
+        self.prob1["s3"]["a1"]["s3"] = 0.15
+
+        self.prob1["s4"]["a2"]["s5"] = 0.9
+        self.prob1["s4"]["a2"]["s4"] = 0.1
+
+        set_loop_states(self.states1, self.actions1, self.prob1)
+        self.rewards1 = mdp.generate_rewards(self.states1, self.actions1, -5, 5)
+
+        self.mdp_obj1 = mdp.MDP(self.states1, self.actions1, self.prob1, self.rewards1)
 
     def test_neighbour_biggest_prob(self):
 
@@ -186,6 +225,31 @@ class TestDijkstra(unittest.TestCase):
         shortest_path_s2["s3"] = s2_shortest_path_s3
 
         asserEqual_shortest_path(self, shortest_path_s2, result_s2)
+
+    def test_dijkstra_alg(self):
+        max_value = -sys.maxsize - 1
+        result = dijkstra.dijkstra_alg(self.mdp_obj1, self.prob1, "s0", "s5")
+
+        s0_shortest_path_s0 = dijkstra.ShortestPathEntry(1, None, None)
+        s0_shortest_path_s1 = dijkstra.ShortestPathEntry(0.9, "s0", "a0")
+        s0_shortest_path_s2 = dijkstra.ShortestPathEntry(0.3, "s0", "a1")
+        s0_shortest_path_s3 = dijkstra.ShortestPathEntry(0.765, "s1", "a1")
+        s0_shortest_path_s4 = dijkstra.ShortestPathEntry(0.81, "s1", "a2")
+        s0_shortest_path_s5 = dijkstra.ShortestPathEntry(0.729, "s4", "a2")
+        s0_shortest_path_s6 = dijkstra.ShortestPathEntry(max_value, None, None)
+
+        shortest_path_s0_s5 = {}
+        shortest_path_s0_s5["s0"] = s0_shortest_path_s0
+        shortest_path_s0_s5["s1"] = s0_shortest_path_s1
+        shortest_path_s0_s5["s2"] = s0_shortest_path_s2
+        shortest_path_s0_s5["s3"] = s0_shortest_path_s3
+        shortest_path_s0_s5["s4"] = s0_shortest_path_s4
+        shortest_path_s0_s5["s5"] = s0_shortest_path_s5
+        shortest_path_s0_s5["s6"] = s0_shortest_path_s6
+
+        asserEqual_shortest_path(self, result, shortest_path_s0_s5)
+
+        return
 
     # Function for printing purposes
     def test_print(self):
