@@ -109,7 +109,7 @@ class TestDijkstra(unittest.TestCase):
             unvisited_states, self.prob, current_visit_state
         )
 
-        result_s0 = dijkstra.update_shortest_path(
+        result_s0, shortest_path_value = dijkstra.update_shortest_path(
             start_state,
             end_state,
             current_visit_state,
@@ -143,7 +143,7 @@ class TestDijkstra(unittest.TestCase):
             unvisited_states, self.prob, current_visit_state
         )
 
-        result_s1 = dijkstra.update_shortest_path(
+        result_s1, shortest_path_value = dijkstra.update_shortest_path(
             start_state,
             end_state,
             current_visit_state,
@@ -172,7 +172,7 @@ class TestDijkstra(unittest.TestCase):
             unvisited_states, self.prob, current_visit_state
         )
 
-        result_s2 = dijkstra.update_shortest_path(
+        result_s2, shortest_path_value = dijkstra.update_shortest_path(
             start_state,
             end_state,
             current_visit_state,
