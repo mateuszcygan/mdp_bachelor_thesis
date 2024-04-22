@@ -214,6 +214,35 @@ def choose_next_state_to_visit(shortest_path_table, unvisited_states):
     return max_state
 
 
+def get_shortest_path_actions(shortest_path_table, end_state):
+
+    # Get the start state
+    for state, entry in shortest_path_table.items():
+        if (
+            entry.probability == 1
+            and entry.previous_state == None
+            and entry.executed_action_in_prev_state == None
+        ):
+            start_state = state
+
+    entry_state = end_state  # State which shortest_path entry we consider
+    shortest_path_actions = []
+
+    while entry_state != start_state:
+
+        state = shortest_path_table[entry_state].previous_state
+        action_to_execute = shortest_path_table[
+            entry_state
+        ].executed_action_in_prev_state
+
+        shortest_path_actions_entry = {state: action_to_execute}
+        shortest_path_actions.insert(0, shortest_path_actions_entry)
+
+        entry_state = state
+
+    return shortest_path_actions
+
+
 def dijkstra_alg(mdp_object, approximated_prob, start_state, end_state):
 
     S = mdp_object.states
