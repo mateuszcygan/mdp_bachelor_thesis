@@ -249,8 +249,6 @@ class TestDijkstra(unittest.TestCase):
 
         asserEqual_shortest_path(self, result, shortest_path_s0_s5)
 
-        return
-
     # Function for printing purposes
     def test_print(self):
         return
