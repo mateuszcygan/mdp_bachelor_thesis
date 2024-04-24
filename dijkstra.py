@@ -187,17 +187,18 @@ def compare_shortest_path_value(
     shortest_path_table, shortest_path_value, unvisited_states
 ):
     shortest_path_value_bigger = True
-    for state, values in shortest_path_table.items():
+    for state, entry in shortest_path_table.items():
         if state in unvisited_states:
             # There should be at least one value in the table among unvisited states that is bigger than shortest_path_value - chance to find more probable path
             # If shortest_path_value is bigger or equal than each entry in the shortest_path table, there is no need to calculate further - no chance to find more probable path
             shortest_path_value_bigger = shortest_path_value_bigger and (
-                shortest_path_value >= values.probability
+                shortest_path_value >= entry.probability
             )
 
     return shortest_path_value_bigger
 
 
+# Chooses the state with the biggest so far calculated probability in the shortest_path_table
 def choose_next_state_to_visit(shortest_path_table, unvisited_states):
     max_state_value = -sys.maxsize - 1
     max_state = None
@@ -254,15 +255,11 @@ def dijkstra_alg(mdp_object_states, approximated_prob, start_state, end_state):
         -1
     )  # For comparisson if it is required to calculate further (probability of reaching the end state)
 
-    # previous_nodes - dict that stores the trajectory of the current best known path for each node
-    previous_nodes = {}
-
     # Initialize the current visiting node to node from which we start
     current_visit_state = start_state
 
     # Execute the algorithm until the end_node is visited
     while end_state in unvisited_states:
-        # for i in range(1):
 
         # Extract probabilities to neighbours (only states (neighbours) that haven't been visited yet are considered)
         neighbours = neighbour_biggest_prob(
