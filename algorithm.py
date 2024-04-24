@@ -1,6 +1,7 @@
 import copy
 import random
 
+import dijkstra
 import mdp
 
 ### ESSENTIAL FUNCTIONS
@@ -214,7 +215,7 @@ def explore_least_known_states(
 
         current_state = next_state
 
-    return approximated_prob
+    return approximated_prob, current_state
 
 
 def learn_probabilities_convergence(mdp_object, threshold):
@@ -341,10 +342,94 @@ def learn_probabilities_convergence(mdp_object, threshold):
         current_state = next_state
 
 
+### DIJKSTRA ALGORITHM
+
+
+def explore_least_known_states_dijkstra(
+    states, probabilities, approximated_prob, iteration_num, states_hits, current_state
+):
+
+    iteration_num_counter = 0  # Counts how many actions have already been executed
+
+    while iteration_num_counter < iteration_num:
+
+        # Find least_visited_state and the most probable path for reaching it
+        least_visited_state = get_least_visited_state(states_hits)
+
+        print("current state", current_state)
+        print("least_visited_state", least_visited_state)
+
+        shortest_path_actions = dijkstra.dijkstra_alg(
+            states, approximated_prob, current_state, least_visited_state
+        )
+
+        if len(shortest_path_actions) == 0:
+            raise ValueError('Error! "shortest_path_actions" array empty.')
+
+        while True:
+            if len(shortest_path_actions) == 1:
+
+                # Execute the first action from the shortest_path_actions array
+                action_to_execute = shortest_path_actions[0][current_state]
+
+                next_state, states_hits = execute_action(
+                    states, probabilities, current_state, action_to_execute, states_hits
+                )
+
+                approximated_prob = update_approx_prob(
+                    approximated_prob,
+                    states_hits,
+                    current_state,
+                    action_to_execute,
+                    states,
+                )
+
+                iteration_num_counter += 1
+
+                break
+
+            else:
+
+                action_to_execute = shortest_path_actions[0][current_state]
+
+                next_state, states_hits = execute_action(
+                    states, probabilities, current_state, action_to_execute, states_hits
+                )
+
+                approximated_prob = update_approx_prob(
+                    approximated_prob,
+                    states_hits,
+                    current_state,
+                    action_to_execute,
+                    states,
+                )
+
+                iteration_num_counter += 1
+
+                current_state = next_state
+
+                # Delete first element from shortest_path_actions and check if transition took place to desired state
+                shortest_path_actions.pop(0)
+
+                # desired_state - state that dijkstra's algorithm calculated to be the next one
+                desired_state = next(iter(shortest_path_actions[0]))
+
+                # Check if the executed action took us to the desired state from shortest_path_actions
+                if current_state != desired_state:
+                    break
+
+                continue
+
+    print("Num of iterations:", iteration_num_counter)
+    return approximated_prob, current_state
+
+
 ### ALGORITHM
 
 
-def my_algorithm(mdp_object, sys_learn_iterations, least_known_iterations):
+def my_algorithm(
+    mdp_object, sys_learn_iterations, least_known_iterations, dijkstra_iterations
+):
 
     # The structure of MDP is known
     A = mdp_object.actions
@@ -355,7 +440,8 @@ def my_algorithm(mdp_object, sys_learn_iterations, least_known_iterations):
 
     # Create approximated probabilities
     approximated_prob = assign_initial_approx_probabilities(S, P)
-    print("Approximated probabilities:")
+    # print("Approximated probabilities:")
+    # mdp.print_mdp_details(approximated_prob)
 
     # Store how many times a transition to a certain state took place
 
@@ -367,13 +453,24 @@ def my_algorithm(mdp_object, sys_learn_iterations, least_known_iterations):
     approximated_prob, current_state = systematic_learning(
         S, P, approximated_prob, states_hits, current_state, sys_learn_iterations
     )
+    # mdp.print_mdp_details(states_hits)
     # print("Approximated prob after systematic learning")
     # mdp.print_mdp_details(approximated_prob)
+    hits_sum = calculate_states_hits(states_hits)
+    print("States hits after systematic learning:")
+    print_states_hits(hits_sum)
 
-    approximated_prob = explore_least_known_states(
+    approximated_prob, current_state = explore_least_known_states(
         S, P, approximated_prob, least_known_iterations, states_hits, current_state
     )
+    hits_sum = calculate_states_hits(states_hits)
+    print("States hits after exploring least know states:")
+    print_states_hits(hits_sum)
     # print("Approximated prob after exploring least known states")
     # mdp.print_mdp_details(approximated_prob)
+
+    approximated_prob, current_state = explore_least_known_states_dijkstra(
+        S, P, approximated_prob, dijkstra_iterations, states_hits, current_state
+    )
 
     return approximated_prob
