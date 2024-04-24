@@ -112,7 +112,7 @@ class TestLearnProbabilities(unittest.TestCase):
         self.max_reward = random.randint(1, 8)
 
     # Test if sum of approximated probabilities for each state is equals (close to) 1.0
-    def test_prob_sum_finite(self):
+    def test_my_algorithm(self):
 
         for _ in range(100):  # Test for 100 different MDPs
 
@@ -127,9 +127,7 @@ class TestLearnProbabilities(unittest.TestCase):
             current_state = "s0"
             iteration_number = 100
 
-            result, current_state = algorithm.systematic_learning(
-                S, P, approx_prob, states_hits, current_state, iteration_number
-            )
+            result = algorithm.my_algorithm(mdp_object, 25, 25, 25)
 
             # Check if the sum of all probabilities is close to 1
             for state, action_foll_states in result.items():
