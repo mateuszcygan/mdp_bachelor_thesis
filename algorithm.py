@@ -5,7 +5,6 @@ import dijkstra
 import mdp
 
 ### ESSENTIAL FUNCTIONS
-# test
 
 
 def assign_initial_approx_probabilities(states, probabilities):
@@ -102,11 +101,68 @@ def print_states_hits(states_hits_sum):
         print(state, ":", hit_sum)
 
 
+### CONVERGENCE
+def check_prob_convergence(states, threshold, approximated_prob, approximated_prob_new):
+
+    exe_actions = (
+        []
+    )  # List with possible actions from each state (needed for convergence)
+    for state in states:
+        exe_actions.append(mdp.get_possible_actions(approximated_prob, state))
+
+    # Check convergence
+    convergence = True
+
+    for init_state, exe_action_list in zip(states, exe_actions):
+        for exe_action in exe_action_list:
+            for following_state in states:
+                convergence = convergence and (
+                    abs(
+                        approximated_prob[init_state][exe_action][following_state]
+                        - approximated_prob_new[init_state][exe_action][following_state]
+                    )
+                    < threshold
+                )
+    return convergence
+
+
+def check_specific_prob_convergence(
+    approximated_prob,
+    approximated_prob_new,
+    prob_to_check,
+    convergence_check_interval,
+    threshold,
+):
+    convergence = True
+
+    for i in range(0, convergence_check_interval):
+        convergence = convergence and (
+            abs(
+                approximated_prob[prob_to_check[i][0]][prob_to_check[i][1]][
+                    prob_to_check[i][2]
+                ]
+                - approximated_prob_new[prob_to_check[i][0]][prob_to_check[i][1]][
+                    prob_to_check[i][2]
+                ]
+            )
+            < threshold
+        )
+
+    return convergence
+
+
 ### SYSTEMATIC LEARNING APPROACH
 
 
 def systematic_learning(
-    states, probabilities, approximated_prob, states_hits, current_state, iteration_num
+    states,
+    probabilities,
+    approximated_prob,
+    states_hits,
+    current_state,
+    max_iterations=None,
+    convergence_threshold=None,
+    convergence_check_interval=None,
 ):
 
     # state_actions - dict that involves data allowing for alternating execution of actions
@@ -123,9 +179,17 @@ def systematic_learning(
         state_actions[state]["actions_num"] = len(list(probabilities[state].keys()))
         state_actions[state]["actions"] = list(probabilities[state].keys())
 
-    i = 0
-    for _ in range(iteration_num):
-        i += 1  # For testing cases
+    iteration_num = 0
+
+    action_details = (
+        []
+    )  # Array that stores (initial_state, executed_action, following_state) after each execution of an action - needed for convergence check
+    approximated_prob_new = copy.deepcopy(
+        approximated_prob
+    )  # Dictionary that stores newly calculated probabilities - needed for convergence check
+
+    while True:
+        iteration_num += 1  # For testing cases
 
         # Retreive which action should be executed as a next one
         action_to_execute_index = (
@@ -144,11 +208,26 @@ def systematic_learning(
             "iteration_num"
         ] += 1  # Increase the iteration number of the current state
 
-        approximated_prob = update_approx_prob(
-            approximated_prob, states_hits, current_state, executed_action, states
+        new_approximated_prob = update_approx_prob(
+            new_approximated_prob, states_hits, current_state, executed_action, states
         )
 
-        current_state = next_state
+        # Convergence case
+
+        if convergence_check_interval is not None:
+            # Update an array with executed action details
+            action_details.insert((current_state, executed_action, next_state))
+
+            if convergence_threshold is None:
+                raise ValueError('"convergence_threshold" not defined')
+            else:
+                if iteration_num % convergence_check_interval == 0:
+                    # Check convergence
+                    return
+
+        # Case with performing a certain number of iterations
+        if max_iterations is not None and iteration_num >= max_iterations:
+            break
 
     # Manual tests
 
@@ -277,7 +356,7 @@ def learn_probabilities_convergence(mdp_object, threshold):
     exe_actions = []
     for state in S:
         exe_actions.append(state_actions[state]["actions"])
-    # print(exe_actions)
+    print(exe_actions)
 
     while True:
         i += 1  # For testing cases
