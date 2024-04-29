@@ -130,23 +130,17 @@ def check_specific_prob_convergence(
     approximated_prob,
     approximated_prob_new,
     prob_to_check,
-    convergence_check_interval,
     threshold,
 ):
     convergence = True
 
-    for i in range(0, convergence_check_interval):
-        convergence = convergence and (
-            abs(
-                approximated_prob[prob_to_check[i][0]][prob_to_check[i][1]][
-                    prob_to_check[i][2]
-                ]
-                - approximated_prob_new[prob_to_check[i][0]][prob_to_check[i][1]][
-                    prob_to_check[i][2]
-                ]
-            )
-            < threshold
-        )
+    for state, action in prob_to_check:
+
+        prob_to_check_old = approximated_prob[state][action].items()
+        prob_to_check_new = approximated_prob_new[state][action].items()
+
+        for (k1, v1), (k2, v2) in zip(prob_to_check_old, prob_to_check_new):
+            convergence = convergence and (v1 - v2 < threshold)
 
     return convergence
 
@@ -164,6 +158,10 @@ def systematic_learning(
     convergence_threshold=None,
     convergence_check_interval=None,
 ):
+
+    # No execution wanted
+    if max_iterations == 0:
+        return approximated_prob, current_state
 
     # state_actions - dict that involves data allowing for alternating execution of actions
     # iteration_num - number of transitions to certain state
@@ -183,7 +181,7 @@ def systematic_learning(
 
     action_details = (
         []
-    )  # Array that stores (initial_state, executed_action, following_state) after each execution of an action - needed for convergence check
+    )  # Array that stores (initial_state, executed_action) after each execution of an action - needed for convergence check
     approximated_prob_new = copy.deepcopy(
         approximated_prob
     )  # Dictionary that stores newly calculated probabilities - needed for convergence check
@@ -208,15 +206,15 @@ def systematic_learning(
             "iteration_num"
         ] += 1  # Increase the iteration number of the current state
 
-        new_approximated_prob = update_approx_prob(
-            new_approximated_prob, states_hits, current_state, executed_action, states
+        approximated_prob_new = update_approx_prob(
+            approximated_prob_new, states_hits, current_state, executed_action, states
         )
 
         # Convergence case
 
         if convergence_check_interval is not None:
             # Update an array with executed action details
-            action_details.insert((current_state, executed_action, next_state))
+            action_details.insert((current_state, executed_action))
 
             if convergence_threshold is None:
                 raise ValueError('"convergence_threshold" not defined')
@@ -288,6 +286,7 @@ def get_max_prob_action(current_state, state_with_smallest_hits, probabilities):
 def explore_least_known_states(
     states, probabilities, approximated_prob, iteration_num, states_hits, current_state
 ):
+
     for _ in range(iteration_num):
         least_visited_state = get_least_visited_state(states_hits, current_state)
 
