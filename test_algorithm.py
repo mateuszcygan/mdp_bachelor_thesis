@@ -136,5 +136,55 @@ class TestLearnProbabilities(unittest.TestCase):
                     self.assertAlmostEqual(state_prob_sum, 1.0, delta=1e-6)
 
 
+class TestConvergence(unittest.TestCase):
+
+    def setUp(self):
+        self.probabilities_old = {
+            "s0": {"a0": {"s0": 0.75, "s1": 0.25}, "a1": {"s0": 0.43, "s1": 0.57}},
+            "s1": {"a1": {"s0": 0.4, "s1": 0.6}},
+        }
+
+        self.probabilities_new = {
+            "s0": {"a0": {"s0": 0.74, "s1": 0.24}, "a1": {"s0": 0.43, "s1": 0.57}},
+            "s1": {"a1": {"s0": 0.6, "s1": 0.4}},
+        }
+
+        self.threshold1 = 0.1
+        self.threshold2 = 0.2
+
+    def test_check_specific_prob_convergence(self):
+
+        prob_to_check = [("s0", "a0"), ("s1", "a1")]
+
+        result1 = algorithm.check_specific_prob_convergence(
+            self.probabilities_old,
+            self.probabilities_new,
+            prob_to_check,
+            self.threshold1,
+        )
+        result2 = algorithm.check_specific_prob_convergence(
+            self.probabilities_old,
+            self.probabilities_new,
+            prob_to_check,
+            self.threshold2,
+        )
+
+        self.assertFalse(result1)
+        self.assertTrue(result2)
+
+    def test_check_prob_convergence(self):
+
+        states = ["s0", "s1"]
+        result1 = algorithm.check_prob_convergence(
+            states, self.threshold1, self.probabilities_old, self.probabilities_new
+        )
+        result2 = algorithm.check_prob_convergence(
+            states, self.threshold2, self.probabilities_old, self.probabilities_new
+        )
+
+        self.assertFalse(result1)
+        self.assertTrue(result2)
+
+
 if __name__ == "__main__":
     unittest.main()
