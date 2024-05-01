@@ -140,9 +140,7 @@ def check_specific_prob_convergence(
         prob_to_check_new = approximated_prob_new[state][action].items()
 
         for (k1, v1), (k2, v2) in zip(prob_to_check_old, prob_to_check_new):
-            # print("v1:", v1, "v2:", v2)
             convergence = convergence and (v1 - v2 < threshold)
-        # print("\n")
 
     return convergence
 
@@ -163,7 +161,7 @@ def systematic_learning(
 
     # No execution wanted
     if max_iterations == 0 and convergence_threshold == None:
-        return approximated_prob, current_state
+        return approximated_prob, states_hits, current_state
 
     # state_actions - dict that involves data allowing for alternating execution of actions
     # iteration_num - number of transitions to certain state
@@ -221,8 +219,8 @@ def systematic_learning(
             current_state = next_state
 
             if iteration_num % convergence_check_interval == 0:
-                # Check convergence
 
+                # Check convergence
                 convergence_check = check_specific_prob_convergence(
                     approximated_prob,
                     approximated_prob_new,
@@ -263,7 +261,7 @@ def systematic_learning(
     # )
     # mdp.print_mdp_details(states_hits)
 
-    return approximated_prob, current_state
+    return approximated_prob, states_hits, current_state
 
 
 ### EXPLORE LEAST KNOWN STATE
@@ -301,150 +299,73 @@ def get_max_prob_action(current_state, state_with_smallest_hits, probabilities):
 
 
 def explore_least_known_states(
-    states, probabilities, approximated_prob, iteration_num, states_hits, current_state
+    states,
+    probabilities,
+    approximated_prob,
+    states_hits,
+    current_state,
+    max_iterations=None,
+    convergence_threshold=None,
+    convergence_check_interval=None,
 ):
+    # No execution wanted
+    if max_iterations == 0 and convergence_threshold == None:
+        return approximated_prob, states_hits, current_state
 
-    for _ in range(iteration_num):
+    iteration_num_counter = 0
+    approximated_prob_new = copy.deepcopy(approximated_prob)
+    action_details = (
+        []
+    )  # Array that stores (initial_state, executed_action) after each execution of an action - needed for convergence check
+
+    while True:
+
+        iteration_num_counter += 1
         least_visited_state = get_least_visited_state(states_hits, current_state)
 
         max_probability, action_to_execute = get_max_prob_action(
-            current_state, least_visited_state, approximated_prob
+            current_state, least_visited_state, approximated_prob_new
         )
         next_state, states_hits = execute_action(
             states, probabilities, current_state, action_to_execute, states_hits
         )
 
-        approximated_prob = update_approx_prob(
-            approximated_prob, states_hits, current_state, action_to_execute, states
+        approximated_prob_new = update_approx_prob(
+            approximated_prob_new, states_hits, current_state, action_to_execute, states
         )
+        # Convergence case
+        if convergence_check_interval is not None and convergence_threshold is not None:
+
+            # Update an array with executed action details
+            action_details.insert(1, (current_state, action_to_execute))
+
+            current_state = next_state
+
+            if iteration_num_counter % convergence_check_interval == 0:
+
+                # Check convergance
+                convergence_check = check_specific_prob_convergence(
+                    approximated_prob,
+                    approximated_prob_new,
+                    action_details,
+                    convergence_threshold,
+                )
+
+                action_details.clear()
+
+                approximated_prob = copy.deepcopy(approximated_prob_new)
+
+                if convergence_check:
+                    break
 
         current_state = next_state
+
+        # Case with performing a certain number of iterations
+        if max_iterations > 0 and iteration_num_counter >= max_iterations:
+            approximated_prob = approximated_prob_new
+            break
 
     return approximated_prob, states_hits, current_state
-
-
-def learn_probabilities_convergence(mdp_object, threshold):
-
-    # The structure of MDP is known
-    A = mdp_object.actions
-    S = mdp_object.states
-    P = (
-        mdp_object.probabilities
-    )  # Probabilities needed for changing between transitions
-
-    # Needed for choosing actions that should be executed
-    state_actions = {
-        s: {"iteration_num": 0, "actions_num": None, "actions": None} for s in S
-    }
-
-    # Create dictionary that stores number of possible actions and possible actions in an array
-    for state in S:
-        state_actions[state]["actions_num"] = len(list(P[state].keys()))
-        state_actions[state]["actions"] = list(P[state].keys())
-
-    # for state in S:
-    #     print(state)
-    #     print("actions_num:", state_actions[state]["actions_num"])
-    #     print("actions:", state_actions[state]["actions"])
-    #     print("\n")
-
-    # Store how many times a transition to a certain state took place
-    states_hits = {s: {a: {s: 0 for s in S} for a in A} for s in S}
-
-    prob_denominator = len(S)  # Denominator for calculating probabilities
-
-    # Initially all probabilities for transitioning to other state are equal
-    initial_prob = 1 / prob_denominator
-    approximated_prob = copy.deepcopy(P)
-    approximated_prob_new = copy.deepcopy(P)
-
-    # Set all transition probabilities to initial probability
-    for state in approximated_prob:
-        for action in approximated_prob[state]:
-            for next_state in approximated_prob[state][action]:
-                approximated_prob[state][action][next_state] = initial_prob
-                approximated_prob_new[state][action][next_state] = initial_prob
-
-    current_state = "s0"  # Start at state 's0'
-    i = 0  # Number of iterations
-
-    # List with possible actions from each state (needed for convergence)
-    exe_actions = []
-    for state in S:
-        exe_actions.append(state_actions[state]["actions"])
-    print(exe_actions)
-
-    while True:
-        i += 1  # For testing cases
-
-        # Retreive which action should be executed as a next one
-        action_to_execute_index = (
-            state_actions[current_state]["iteration_num"]
-            % state_actions[current_state]["actions_num"]
-        )
-        executed_action = state_actions[current_state]["actions"][
-            action_to_execute_index
-        ]
-
-        state_actions[current_state][
-            "iteration_num"
-        ] += 1  # Increase the iteration number of the current state
-
-        # Get probabilities of transitioning to other states (needed for transition execution)
-        states_prob = mdp.get_foll_states_prob_values(P, current_state, executed_action)
-        next_state = random.choices(S, weights=states_prob)[0]
-
-        # Mark state to which transition took place
-        states_hits[current_state][executed_action][next_state] += 1
-
-        # Calculate new approximation of probabilities
-        hits_list = list(states_hits[current_state][executed_action].values())
-        hits_num = sum(
-            hits_list
-        )  # Sum how many states changes took place for a certain state after executing a certain action
-
-        for state in S:
-            approximated_prob_new[current_state][executed_action][state] = (
-                1 + states_hits[current_state][executed_action][state]
-            ) / (prob_denominator + hits_num)
-
-        # Check convergence
-        convergence = True
-
-        for init_state, exe_action_list in zip(S, exe_actions):
-            for exe_action in exe_action_list:
-                for following_state in S:
-                    convergence = convergence and (
-                        abs(
-                            approximated_prob[init_state][exe_action][following_state]
-                            - approximated_prob_new[init_state][exe_action][
-                                following_state
-                            ]
-                        )
-                        < threshold
-                    )
-
-        if convergence:
-
-            # Manual tests
-
-            ## 1: the number of all iterations, sum of iterations for each of states and sum of states' hits should be equal
-            print("Number of iterations: ", i)
-            # states_hits_sum = 0
-            # for state, action_foll_state in states_hits.items():
-            #     for action, foll_states in action_foll_state.items():
-            #         for foll_state, hit in foll_states.items():
-            #             states_hits_sum += hit
-
-            # states_iteration_sum = 0
-            # for state in S:
-            #     states_iteration_sum += state_actions[state]["iteration_num"]
-
-            # print("Equality test: iteration_num === states_hits == states_iteration:", i == states_hits_sum == states_iteration_sum)
-            return approximated_prob_new
-
-        approximated_prob = copy.deepcopy(approximated_prob_new)
-        current_state = next_state
 
 
 ### DIJKSTRA ALGORITHM
@@ -454,7 +375,6 @@ def explore_least_known_states_dijkstra(
     states,
     probabilities,
     approximated_prob,
-    iteration_num,
     states_hits,
     current_state,
     max_iterations=None,
@@ -464,7 +384,7 @@ def explore_least_known_states_dijkstra(
 
     # No execution wanted
     if max_iterations == 0 and convergence_threshold == None:
-        return approximated_prob, current_state
+        return approximated_prob, states_hits, current_state
 
     iteration_num_counter = 0  # Counts how many actions have already been executed
 
@@ -476,13 +396,18 @@ def explore_least_known_states_dijkstra(
         approximated_prob
     )  # Dictionary that stores newly calculated probabilities - needed for convergence check
 
-    while iteration_num_counter < iteration_num:
+    convergence_check = False
+
+    while True:
+
+        if convergence_check:
+            break
 
         # Find least_visited_state and the most probable path for reaching it
         least_visited_state = get_least_visited_state(states_hits, current_state)
 
         shortest_path_actions = dijkstra.dijkstra_alg(
-            states, approximated_prob, current_state, least_visited_state
+            states, approximated_prob_new, current_state, least_visited_state
         )
 
         if len(shortest_path_actions) == 0:
@@ -499,8 +424,8 @@ def explore_least_known_states_dijkstra(
                     states, probabilities, current_state, action_to_execute, states_hits
                 )
 
-                approximated_prob = update_approx_prob(
-                    approximated_prob,
+                approximated_prob_new = update_approx_prob(
+                    approximated_prob_new,
                     states_hits,
                     current_state,
                     action_to_execute,
@@ -508,6 +433,33 @@ def explore_least_known_states_dijkstra(
                 )
 
                 iteration_num_counter += 1
+
+                if (
+                    convergence_check_interval is not None
+                    and convergence_threshold is not None
+                ):
+
+                    # Update an array with executed action details
+                    action_details.insert(1, (current_state, action_to_execute))
+
+                    if iteration_num_counter % convergence_check_interval == 0:
+
+                        # Check convergence
+                        convergence_check = check_specific_prob_convergence(
+                            approximated_prob,
+                            approximated_prob_new,
+                            action_details,
+                            convergence_threshold,
+                        )
+
+                        action_details.clear()
+
+                        approximated_prob = copy.deepcopy(approximated_prob_new)
+
+                        if convergence_check:
+                            # Change the value of current_state - needed for return value
+                            current_state = next_state
+                            break
 
                 current_state = next_state
 
@@ -522,8 +474,8 @@ def explore_least_known_states_dijkstra(
                     states, probabilities, current_state, action_to_execute, states_hits
                 )
 
-                approximated_prob = update_approx_prob(
-                    approximated_prob,
+                approximated_prob_new = update_approx_prob(
+                    approximated_prob_new,
                     states_hits,
                     current_state,
                     action_to_execute,
@@ -531,6 +483,33 @@ def explore_least_known_states_dijkstra(
                 )
 
                 iteration_num_counter += 1
+
+                if (
+                    convergence_check_interval is not None
+                    and convergence_threshold is not None
+                ):
+
+                    # Update an array with executed action details
+                    action_details.insert(1, (current_state, action_to_execute))
+
+                    if iteration_num_counter % convergence_check_interval == 0:
+
+                        # Check convergence
+                        convergence_check = check_specific_prob_convergence(
+                            approximated_prob,
+                            approximated_prob_new,
+                            action_details,
+                            convergence_threshold,
+                        )
+
+                        action_details.clear()
+
+                        approximated_prob = copy.deepcopy(approximated_prob_new)
+
+                        if convergence_check:
+                            # Change the value of current_state - needed for return value
+                            current_state = next_state
+                            break
 
                 current_state = next_state
 
@@ -546,6 +525,13 @@ def explore_least_known_states_dijkstra(
 
                 continue
 
+        # Case with performing a certain number of iterations
+        if max_iterations > 0 and iteration_num_counter >= max_iterations:
+            approximated_prob = approximated_prob_new
+            break
+
+    print("Iteration number:", iteration_num_counter)
+
     return approximated_prob, states_hits, current_state
 
 
@@ -559,6 +545,10 @@ def my_algorithm(
     dijkstra_iterations,
     sys_learn_threshold=None,
     sys_learn_interval=None,
+    least_known_threshold=None,
+    least_known_interval=None,
+    dijkstra_threshold=None,
+    dijkstra_interval=None,
 ):
 
     # The structure of MDP is known
@@ -576,7 +566,7 @@ def my_algorithm(
 
     current_state = "s0"  # Start at state 's0'
 
-    approximated_prob, current_state = systematic_learning(
+    approximated_prob, states_hits, current_state = systematic_learning(
         S,
         P,
         approximated_prob,
@@ -595,7 +585,14 @@ def my_algorithm(
     # mdp.print_mdp_details(approximated_prob)
 
     approximated_prob, states_hits, current_state = explore_least_known_states(
-        S, P, approximated_prob, least_known_iterations, states_hits, current_state
+        S,
+        P,
+        approximated_prob,
+        states_hits,
+        current_state,
+        least_known_iterations,
+        least_known_threshold,
+        least_known_interval,
     )
 
     # PRINTS FOR DEBUGGING
@@ -607,7 +604,14 @@ def my_algorithm(
     # mdp.print_mdp_details(approximated_prob)
 
     approximated_prob, states_hits, current_state = explore_least_known_states_dijkstra(
-        S, P, approximated_prob, dijkstra_iterations, states_hits, current_state
+        S,
+        P,
+        approximated_prob,
+        states_hits,
+        current_state,
+        dijkstra_iterations,
+        dijkstra_threshold,
+        dijkstra_interval,
     )
 
     # PRINTS FOR DEBUGGING
