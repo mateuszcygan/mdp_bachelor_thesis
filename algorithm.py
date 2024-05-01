@@ -140,7 +140,9 @@ def check_specific_prob_convergence(
         prob_to_check_new = approximated_prob_new[state][action].items()
 
         for (k1, v1), (k2, v2) in zip(prob_to_check_old, prob_to_check_new):
+            # print("v1:", v1, "v2:", v2)
             convergence = convergence and (v1 - v2 < threshold)
+        # print("\n")
 
     return convergence
 
@@ -160,7 +162,7 @@ def systematic_learning(
 ):
 
     # No execution wanted
-    if max_iterations == 0:
+    if max_iterations == 0 and convergence_threshold == None:
         return approximated_prob, current_state
 
     # state_actions - dict that involves data allowing for alternating execution of actions
@@ -187,7 +189,7 @@ def systematic_learning(
     )  # Dictionary that stores newly calculated probabilities - needed for convergence check
 
     while True:
-        iteration_num += 1  # For testing cases
+        iteration_num += 1
 
         # Retreive which action should be executed as a next one
         action_to_execute_index = (
@@ -211,20 +213,35 @@ def systematic_learning(
         )
 
         # Convergence case
+        if convergence_check_interval is not None and convergence_threshold is not None:
 
-        if convergence_check_interval is not None:
             # Update an array with executed action details
-            action_details.insert((current_state, executed_action))
+            action_details.insert(1, (current_state, executed_action))
 
-            if convergence_threshold is None:
-                raise ValueError('"convergence_threshold" not defined')
-            else:
-                if iteration_num % convergence_check_interval == 0:
-                    # Check convergence
-                    return
+            current_state = next_state
+
+            if iteration_num % convergence_check_interval == 0:
+                # Check convergence
+
+                convergence_check = check_specific_prob_convergence(
+                    approximated_prob,
+                    approximated_prob_new,
+                    action_details,
+                    convergence_threshold,
+                )
+
+                action_details.clear()
+
+                approximated_prob = copy.deepcopy(approximated_prob_new)
+
+                if convergence_check:
+                    break
+
+        current_state = next_state
 
         # Case with performing a certain number of iterations
-        if max_iterations is not None and iteration_num >= max_iterations:
+        if max_iterations > 0 and iteration_num >= max_iterations:
+            approximated_prob = approximated_prob_new
             break
 
     # Manual tests
@@ -434,9 +451,30 @@ def learn_probabilities_convergence(mdp_object, threshold):
 
 
 def explore_least_known_states_dijkstra(
-    states, probabilities, approximated_prob, iteration_num, states_hits, current_state
+    states,
+    probabilities,
+    approximated_prob,
+    iteration_num,
+    states_hits,
+    current_state,
+    max_iterations=None,
+    convergence_threshold=None,
+    convergence_check_interval=None,
 ):
+
+    # No execution wanted
+    if max_iterations == 0 and convergence_threshold == None:
+        return approximated_prob, current_state
+
     iteration_num_counter = 0  # Counts how many actions have already been executed
+
+    action_details = (
+        []
+    )  # Array that stores (initial_state, executed_action) after each execution of an action - needed for convergence check
+
+    approximated_prob_new = copy.deepcopy(
+        approximated_prob
+    )  # Dictionary that stores newly calculated probabilities - needed for convergence check
 
     while iteration_num_counter < iteration_num:
 
@@ -515,7 +553,12 @@ def explore_least_known_states_dijkstra(
 
 
 def my_algorithm(
-    mdp_object, sys_learn_iterations, least_known_iterations, dijkstra_iterations
+    mdp_object,
+    sys_learn_iterations,
+    least_known_iterations,
+    dijkstra_iterations,
+    sys_learn_threshold=None,
+    sys_learn_interval=None,
 ):
 
     # The structure of MDP is known
@@ -534,7 +577,14 @@ def my_algorithm(
     current_state = "s0"  # Start at state 's0'
 
     approximated_prob, current_state = systematic_learning(
-        S, P, approximated_prob, states_hits, current_state, sys_learn_iterations
+        S,
+        P,
+        approximated_prob,
+        states_hits,
+        current_state,
+        sys_learn_iterations,
+        sys_learn_threshold,
+        sys_learn_interval,
     )
 
     # PRINTS FOR DEBUGGING
