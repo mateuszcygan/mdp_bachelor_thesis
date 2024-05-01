@@ -102,6 +102,31 @@ class TestEssentialFunctions(unittest.TestCase):
 
         self.assertDictEqual(approximated_prob, expected_approx_prob)
 
+    def test_check_states_hits(self):
+        states_hits = {
+            "s0": {
+                "a0": {"s0": 3, "s1": 5, "s2": 2},
+                "a1": {"s0": 4, "s1": 3, "s2": 3},
+                "a2": {"s0": 5, "s1": 1, "s2": 5},
+            },
+            "s1": {
+                "a0": {"s0": 3, "s1": 2, "s2": 3},
+                "a1": {"s0": 6, "s1": 3, "s2": 4},
+                "a2": {"s0": 4, "s1": 5, "s2": 1},
+            },
+            "s2": {
+                "a0": {"s0": 1, "s1": 3, "s2": 1},
+                "a1": {"s0": 3, "s1": 1, "s2": 3},
+                "a2": {"s0": 1, "s1": 2, "s2": 4},
+            },
+        }
+
+        result1 = algorithm.check_states_hits(states_hits, 6)
+        self.assertTrue(result1)
+
+        result2 = algorithm.check_states_hits(states_hits, 40)
+        self.assertFalse(result2)
+
 
 class TestLearnProbabilities(unittest.TestCase):
 

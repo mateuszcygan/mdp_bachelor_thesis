@@ -101,6 +101,19 @@ def print_states_hits(states_hits_sum):
         print(state, ":", hit_sum)
 
 
+# Checks if a desired number of 'states_hits' took place
+def check_states_hits(states_hits, states_hits_number):
+
+    states_hits_sum = calculate_states_hits(states_hits)
+
+    min_hits_num_check = True
+
+    for state, hits in states_hits_sum.items():
+        min_hits_num_check = min_hits_num_check and (hits >= states_hits_number)
+
+    return min_hits_num_check
+
+
 ### CONVERGENCE
 def check_prob_convergence(states, threshold, approximated_prob, approximated_prob_new):
 
