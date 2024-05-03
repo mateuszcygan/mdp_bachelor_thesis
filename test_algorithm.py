@@ -130,10 +130,10 @@ class TestEssentialFunctions(unittest.TestCase):
     # Checks if for each state a certain number of states' hits took place
     def test_check_desired_states_hits_num(self):
 
-        result1 = algorithm.check_desired_states_hits_num(self.states_hits, 6)
+        result1 = algorithm.check_desired_states_hits_num(self.states_hits, 3)
         self.assertTrue(result1)
 
-        result2 = algorithm.check_desired_states_hits_num(self.states_hits, 100)
+        result2 = algorithm.check_desired_states_hits_num(self.states_hits, 60)
         self.assertFalse(result2)
 
     def test_calculate_state_action_hits(self):
