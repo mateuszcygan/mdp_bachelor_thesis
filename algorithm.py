@@ -246,9 +246,9 @@ def systematic_learning(
         state_actions[state]["actions_num"] = len(list(probabilities[state].keys()))
         state_actions[state]["actions"] = list(probabilities[state].keys())
 
-    iteration_num = 0
+    iteration_num_counter = 0
 
-    action_details = (
+    prob_to_check = (
         []
     )  # Array that stores (initial_state, executed_action) after each execution of an action - needed for convergence check
     approximated_prob_new = copy.deepcopy(
@@ -256,7 +256,7 @@ def systematic_learning(
     )  # Dictionary that stores newly calculated probabilities - needed for convergence check
 
     while True:
-        iteration_num += 1
+        iteration_num_counter += 1
 
         # Retreive which action should be executed as a next one
         action_to_execute_index = (
@@ -281,45 +281,22 @@ def systematic_learning(
 
         # Convergence case
         if convergence_check_interval is not None and convergence_threshold is not None:
-            # states_hits_num_check = (
-            #     True  # For case if states_hits don't have to be considered
-            # )
 
             # Update an array with executed action details
-            action_details.insert(1, (current_state, executed_action))
+            prob_to_check.insert(1, (current_state, executed_action))
 
             current_state = next_state
 
-            if iteration_num % convergence_check_interval == 0:
+            if iteration_num_counter % convergence_check_interval == 0:
 
-                convergence_check, action_details, approximated_prob = convergence(
+                convergence_check, prob_to_check, approximated_prob = convergence(
                     approximated_prob,
                     approximated_prob_new,
-                    action_details,
+                    prob_to_check,
                     convergence_threshold,
                     states_hits,
                     desired_states_hits_num,
                 )
-
-                # if states_hits_num > 0:
-                #     states_hits_num_check = check_states_hits(
-                #         states_hits, states_hits_num
-                #     )
-
-                # Check convergence
-                # convergence_check = (
-                #     states_hits_num_check  # If 'states_hits_num' is smaller than 1, 'states_hits_num_check' is always True
-                #     and check_specific_prob_convergence(
-                #         approximated_prob,
-                #         approximated_prob_new,
-                #         action_details,
-                #         convergence_threshold,
-                #     )
-                # )
-
-                action_details.clear()
-
-                # approximated_prob = copy.deepcopy(approximated_prob_new)
 
                 if convergence_check:
                     break
@@ -327,7 +304,7 @@ def systematic_learning(
         current_state = next_state
 
         # Case with performing a certain number of iterations
-        if max_iterations > 0 and iteration_num >= max_iterations:
+        if max_iterations > 0 and iteration_num_counter >= max_iterations:
             approximated_prob = approximated_prob_new
             break
 
@@ -345,12 +322,12 @@ def systematic_learning(
     #     states_iteration_sum += state_actions[state]["iteration_num"]
 
     # print(
-    #     "Equality test: iteration_num === states_hits == states_iteration:",
-    #     i == states_hits_sum == states_iteration_sum,
+    #     "Manual equality test in 'systematic_learning': iteration_num === states_hits == states_iteration:",
+    #     iteration_num_counter == states_hits_sum == states_iteration_sum,
     # )
     # mdp.print_mdp_details(states_hits)
 
-    print("systematic_learning iterations:", iteration_num)
+    # print("systematic_learning iterations:", iteration_num_counter)
     return approximated_prob, states_hits, current_state
 
 
