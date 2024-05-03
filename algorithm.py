@@ -118,12 +118,15 @@ def print_states_hits(states_hits_sum):
 # Checks if a desired number of 'states_hits' took place
 def check_desired_states_hits_num(states_hits, desired_states_hits_num):
 
-    states_hits_sum = calculate_states_hits(states_hits)
+    state_action_hits = calculate_state_action_hits(states_hits)
 
     min_hits_num_check = True
 
-    for state, hits in states_hits_sum.items():
-        min_hits_num_check = min_hits_num_check and (hits >= desired_states_hits_num)
+    for state, actions in state_action_hits.items():
+        for action, hits_num in actions.items():
+            min_hits_num_check = min_hits_num_check and (
+                hits_num >= desired_states_hits_num
+            )
 
     return min_hits_num_check
 
