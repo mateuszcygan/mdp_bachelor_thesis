@@ -128,7 +128,7 @@ class TestEssentialFunctions(unittest.TestCase):
         self.assertDictEqual(approximated_prob, expected_approx_prob)
 
     # Checks if for each state a certain number of states' hits took place
-    def test_check_states_hits(self):
+    def test_check_desired_states_hits_num(self):
 
         result1 = algorithm.check_desired_states_hits_num(self.states_hits, 6)
         self.assertTrue(result1)
