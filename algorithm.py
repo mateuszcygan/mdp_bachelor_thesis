@@ -93,7 +93,19 @@ def calculate_states_hits(states_hits):
 
     return states_hits_sum
 
-# Calculates number of hits for each action in certain state
+
+# Calculates number of hits for each action in cerain state
+def calculate_state_action_hits(states_hits):
+
+    state_action_hits = {}
+    for state, actions in states_hits.items():
+        state_action_hits[state] = {}
+
+        for action, hits_num in actions.items():
+            action_hits = sum(hits_num.values())
+            state_action_hits[state][action] = action_hits
+
+    return state_action_hits
 
 
 # Prints how many hits each state had

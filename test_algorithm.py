@@ -28,6 +28,31 @@ class TestEssentialFunctions(unittest.TestCase):
         }
         self.states_hits = algorithm.create_states_hits_dictionary(self.probabilities)
 
+        # Define states hits dictionary for testing purposes
+        self.states_hits = {
+            "s0": {
+                "a0": {"s0": 5, "s1": 14, "s2": 3},
+                "a1": {"s0": 32, "s1": 4, "s2": 23},
+                "a2": {"s0": 2, "s1": 0, "s2": 1},
+            },
+            "s1": {
+                "a0": {"s0": 11, "s1": 9, "s2": 6},
+                "a1": {"s0": 12, "s1": 7, "s2": 8},
+                "a2": {"s0": 0, "s1": 3, "s2": 0},
+            },
+            "s2": {
+                "a0": {"s0": 1, "s1": 1, "s2": 1},
+                "a1": {"s0": 20, "s1": 17, "s2": 12},
+                "a2": {"s0": 0, "s1": 1, "s2": 2},
+            },
+        }
+
+        self.state_action_hits = {
+            "s0": {"a0": 22, "a1": 59, "a2": 3},
+            "s1": {"a0": 26, "a1": 27, "a2": 3},
+            "s2": {"a0": 3, "a1": 49, "a2": 3},
+        }
+
     # Test if initial probabilities are initially correct assigned (equal probabilities dependent on states' number)
     def test_assign_initial_approx_probabilities(self):
 
@@ -102,30 +127,19 @@ class TestEssentialFunctions(unittest.TestCase):
 
         self.assertDictEqual(approximated_prob, expected_approx_prob)
 
+    # Checks if for each state a certain number of states' hits took place
     def test_check_states_hits(self):
-        states_hits = {
-            "s0": {
-                "a0": {"s0": 3, "s1": 5, "s2": 2},
-                "a1": {"s0": 4, "s1": 3, "s2": 3},
-                "a2": {"s0": 5, "s1": 1, "s2": 5},
-            },
-            "s1": {
-                "a0": {"s0": 3, "s1": 2, "s2": 3},
-                "a1": {"s0": 6, "s1": 3, "s2": 4},
-                "a2": {"s0": 4, "s1": 5, "s2": 1},
-            },
-            "s2": {
-                "a0": {"s0": 1, "s1": 3, "s2": 1},
-                "a1": {"s0": 3, "s1": 1, "s2": 3},
-                "a2": {"s0": 1, "s1": 2, "s2": 4},
-            },
-        }
 
-        result1 = algorithm.check_states_hits(states_hits, 6)
+        result1 = algorithm.check_desired_states_hits_num(self.states_hits, 6)
         self.assertTrue(result1)
 
-        result2 = algorithm.check_states_hits(states_hits, 40)
+        result2 = algorithm.check_desired_states_hits_num(self.states_hits, 100)
         self.assertFalse(result2)
+
+    def test_calculate_state_action_hits(self):
+
+        result = algorithm.calculate_state_action_hits(self.states_hits)
+        self.assertDictEqual(result, self.state_action_hits)
 
 
 class TestLearnProbabilities(unittest.TestCase):
@@ -152,7 +166,7 @@ class TestLearnProbabilities(unittest.TestCase):
             current_state = "s0"
             iteration_number = 100
 
-            result = algorithm.my_algorithm(mdp_object, 25, 25, 25)
+            result, result_states_hits = algorithm.my_algorithm(mdp_object, 25, 25, 25)
 
             # Check if the sum of all probabilities is close to 1
             for state, action_foll_states in result.items():
