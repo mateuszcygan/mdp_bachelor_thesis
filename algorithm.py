@@ -263,12 +263,12 @@ def systematic_learning(
             state_actions[current_state]["iteration_num"]
             % state_actions[current_state]["actions_num"]
         )
-        executed_action = state_actions[current_state]["actions"][
+        action_to_execute = state_actions[current_state]["actions"][
             action_to_execute_index
         ]
 
         next_state, states_hits = execute_action(
-            states, probabilities, current_state, executed_action, states_hits
+            states, probabilities, current_state, action_to_execute, states_hits
         )
 
         state_actions[current_state][
@@ -276,14 +276,14 @@ def systematic_learning(
         ] += 1  # Increase the iteration number of the current state
 
         approximated_prob_new = update_approx_prob(
-            approximated_prob_new, states_hits, current_state, executed_action, states
+            approximated_prob_new, states_hits, current_state, action_to_execute, states
         )
 
         # Convergence case
         if convergence_check_interval is not None and convergence_threshold is not None:
 
             # Update an array with executed action details
-            prob_to_check.insert(1, (current_state, executed_action))
+            prob_to_check.insert(1, (current_state, action_to_execute))
 
             current_state = next_state
 
@@ -327,7 +327,7 @@ def systematic_learning(
     # )
     # mdp.print_mdp_details(states_hits)
 
-    # print("systematic_learning iterations:", iteration_num_counter)
+    print("systematic_learning iterations:", iteration_num_counter)
     return approximated_prob, states_hits, current_state
 
 
@@ -370,11 +370,11 @@ def explore_least_known_states(
     probabilities,
     approximated_prob,
     states_hits,
-    states_hits_num,
+    desired_states_hits_num,
     current_state,
-    max_iterations=None,
-    convergence_threshold=None,
-    convergence_check_interval=None,
+    max_iterations,
+    convergence_threshold,
+    convergence_check_interval,
 ):
 
     # No execution wanted
@@ -383,7 +383,7 @@ def explore_least_known_states(
 
     iteration_num_counter = 0
     approximated_prob_new = copy.deepcopy(approximated_prob)
-    action_details = (
+    prob_to_check = (
         []
     )  # Array that stores (initial_state, executed_action) after each execution of an action - needed for convergence check
 
@@ -404,36 +404,23 @@ def explore_least_known_states(
         )
         # Convergence case
         if convergence_check_interval is not None and convergence_threshold is not None:
-            states_hits_num_check = (
-                True  # For case if states_hits don't have to be considered
-            )
 
             # Update an array with executed action details
-            action_details.insert(1, (current_state, action_to_execute))
+            prob_to_check.insert(1, (current_state, action_to_execute))
 
             current_state = next_state
 
             if iteration_num_counter % convergence_check_interval == 0:
 
-                if states_hits_num > 0:
-                    states_hits_num_check = check_states_hits(
-                        states_hits, states_hits_num
-                    )
-
                 # Check convergance
-                convergence_check = (
-                    states_hits_num_check  # If 'states_hits_num' is smaller than 1, 'states_hits_num_check' is always True
-                    and check_specific_prob_convergence(
-                        approximated_prob,
-                        approximated_prob_new,
-                        action_details,
-                        convergence_threshold,
-                    )
+                convergence_check, prob_to_check, approximated_prob = convergence(
+                    approximated_prob,
+                    approximated_prob_new,
+                    prob_to_check,
+                    convergence_threshold,
+                    states_hits,
+                    desired_states_hits_num,
                 )
-
-                action_details.clear()
-
-                approximated_prob = copy.deepcopy(approximated_prob_new)
 
                 if convergence_check:
                     break
