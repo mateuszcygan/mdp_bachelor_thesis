@@ -182,7 +182,7 @@ def update_shortest_path(
 
 
 # Compares if there is at least one entry in shortest_path that is bigger than the current shortest_path_value
-# True => True - there is a chance that more probable path can be found
+# True => there is a chance that more probable path can be found
 def compare_shortest_path_value(
     shortest_path_table, shortest_path_value, unvisited_states
 ):
@@ -249,7 +249,8 @@ def dijkstra_alg(mdp_object_states, approximated_prob, start_state, end_state):
     unvisited_states = list(mdp_object_states)
 
     shortest_path = create_shortest_path_table(mdp_object_states, start_state)
-    print_shortest_path_table(shortest_path)
+    # DEBUG
+    # print_shortest_path_table(shortest_path)
 
     shortest_path_value = (
         -1
@@ -265,7 +266,8 @@ def dijkstra_alg(mdp_object_states, approximated_prob, start_state, end_state):
         neighbours = neighbour_biggest_prob(
             unvisited_states, approximated_prob, current_visit_state
         )
-        print_neigh_prob_table(current_visit_state, neighbours)
+        # DEBUG
+        # print_neigh_prob_table(current_visit_state, neighbours)
 
         shortest_path, shortest_path_value = update_shortest_path(
             start_state,
@@ -275,23 +277,27 @@ def dijkstra_alg(mdp_object_states, approximated_prob, start_state, end_state):
             shortest_path,
             neighbours,
         )
-        print_shortest_path_table(shortest_path)
-        print("shortest_path_value:", shortest_path_value)
+        # DEBUG
+        # print_shortest_path_table(shortest_path)
+        # print("shortest_path_value:", shortest_path_value)
 
         # Check if so far calculated shortest_path_value is bigger than all entries in the shortest_path table
         shortest_path_value_bigger = compare_shortest_path_value(
             shortest_path, shortest_path_value, unvisited_states
         )
-        print(shortest_path_value_bigger)
+        # DEBUG
+        # print(shortest_path_value_bigger)
 
         # If the shortest_path_value is bigger than all entries of unvisited states in shortest_path table, then there is no more chance to find more probable path
         if shortest_path_value_bigger:
             shortest_path_actions = get_shortest_path_actions(shortest_path, end_state)
-            print("Termination condition")
+            # DEBUG
+            # print("Termination condition")
             return shortest_path_actions
 
         unvisited_states.remove(current_visit_state)
-        print("unvisited states:", unvisited_states)
+        # DEBUG
+        # print("unvisited states:", unvisited_states)
         current_visit_state = choose_next_state_to_visit(
             shortest_path, unvisited_states
         )
