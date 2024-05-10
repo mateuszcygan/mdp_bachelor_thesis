@@ -361,6 +361,10 @@ def get_max_prob_action(current_state, state_with_smallest_hits, probabilities):
 ### DIJKSTRA ALGORITHM
 
 
+# Note:
+# 'iterations_num' not always corresponds to number of executed actions:
+# 1) the 'shortest_path_actions' can include more than one action to execute for the last iteration and the desired state(s) are reached
+# 2) another one additional iteration: we transition to the least_visited_state and then execute the 'least_executed_action'
 def explore_least_known_state_action_dijkstra(
     states,
     probabilities,
@@ -423,6 +427,24 @@ def explore_least_known_state_action_dijkstra(
                     least_executed_action = get_the_least_executed_action(
                         states_hits, current_state
                     )
+
+                    next_state, states_hits = execute_action(
+                        states,
+                        probabilities,
+                        current_state,
+                        least_executed_action,
+                        states_hits,
+                    )
+
+                    approximated_prob = update_approx_prob(
+                        approximated_prob,
+                        states_hits,
+                        current_state,
+                        least_executed_action,
+                        states,
+                    )
+
+                    iterations_num_counter += 1
 
                 break
 
