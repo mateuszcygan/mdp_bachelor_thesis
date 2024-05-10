@@ -25,5 +25,5 @@ approx_prob_test, states_hits_test = algorithm.my_algo_alternating(
     0.1,
     5,
     10,
-    25,
+    20,
 )
