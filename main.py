@@ -20,10 +20,10 @@ mdp.print_mdp_details(mdp_debug.probabilities)
 
 # Test
 approx_prob_test, states_hits_test = algorithm.my_algo_alternating(
-    mdp_obj0,
+    mdp_obj1,
     4,
-    0.001,
-    8,
+    0.1,
+    5,
     10,
     25,
 )
