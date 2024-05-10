@@ -108,6 +108,24 @@ def calculate_state_action_hits(states_hits):
     return state_action_hits
 
 
+# Needed for adjustement of 'explore_least_known_state_action_dijkstra'
+# Returns the least executed action for a certain state
+def get_the_least_executed_action(states_hits, state):
+
+    state_action_hits = calculate_state_action_hits(states_hits)
+
+    # Retreive hits for passed state
+    actions_hits = state_action_hits[state]
+
+    # Get an action that was the most rarely executed (the first one is taken if there are more than one)
+    min_executed_action_hits = min(actions_hits.values())
+    first_least_executed_action = [
+        key for key in actions_hits if actions_hits[key] == min_executed_action_hits
+    ][0]
+
+    return first_least_executed_action
+
+
 # Prints how many hits each state had
 def print_states_hits(states_hits_sum):
     print("States hits")
@@ -400,6 +418,12 @@ def explore_least_known_state_action_dijkstra(
 
                 current_state = next_state
 
+                # Fire the least executed action from the least visited state
+                if current_state == least_visited_state:
+                    least_executed_action = get_the_least_executed_action(
+                        states_hits, current_state
+                    )
+
                 break
 
             # The shortest path leads through more than one state
@@ -499,12 +523,12 @@ def my_algo_alternating(
             )
 
             # DEBUG
-            systematic_state_action_hits = calculate_state_action_hits(states_hits)
-            print("Systematic learning:")
-            print(systematic_state_action_hits)
-            print("\n")
-            mdp.print_mdp_details(approximated_prob_new)
-            print("\n\n\n")
+            # systematic_state_action_hits = calculate_state_action_hits(states_hits)
+            # print("Systematic learning:")
+            # print(systematic_state_action_hits)
+            # print("\n")
+            # mdp.print_mdp_details(approximated_prob_new)
+            # print("\n\n\n")
 
         else:
             approximated_prob_new, prob_to_check, states_hits, current_state = (
@@ -519,12 +543,12 @@ def my_algo_alternating(
             )
 
             # DEBUG
-            dijkstra_state_action_hits = calculate_state_action_hits(states_hits)
-            print("Explore least known state action dijkstra:")
-            print(dijkstra_state_action_hits)
-            print("\n")
-            mdp.print_mdp_details(approximated_prob_new)
-            print("\n\n\n")
+            # dijkstra_state_action_hits = calculate_state_action_hits(states_hits)
+            # print("Explore least known state action dijkstra:")
+            # print(dijkstra_state_action_hits)
+            # print("\n")
+            # mdp.print_mdp_details(approximated_prob_new)
+            # print("\n\n\n")
 
         # Toggle the flag for the next iteration
         alternate_function = not alternate_function
