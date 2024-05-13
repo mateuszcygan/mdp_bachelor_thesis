@@ -104,6 +104,26 @@ def update_approx_prob(
     return approximated_prob
 
 
+def calculate_interal_iterations_number(
+    total_iterations, sys_learn_iterations, dijkstra_iterations
+):
+
+    internal_iterations_number = 0
+    alternate_function = True  # Flag to switch between two iterations' numbers
+
+    for _ in range(total_iterations):
+
+        if alternate_function:
+            internal_iterations_number += sys_learn_iterations
+
+        else:
+            internal_iterations_number += dijkstra_iterations
+
+        alternate_function = not alternate_function
+
+    return internal_iterations_number
+
+
 ### FUNCTIONS RELATED TO 'states_hits' dictionary
 
 
