@@ -92,21 +92,14 @@ def update_approx_prob_states_hits(
 
 # Updates approximated probabilities (approach dependent on 'update_prob_parameter') - still to implement (now old version)
 def update_approx_prob(
-    approximated_prob, states_hits, current_state, executed_action, states
+    update_prob_parameter,
+    approximated_prob,
+    states_hits,
+    current_state,
+    executed_action,
+    states,
 ):
-    # Needed for calculation that provides assigned initial probabilities
-    prob_denominator = len(states)
-
-    # Calculate new approximation of probabilities
-    hits_list = list(states_hits[current_state][executed_action].values())
-    hits_num = sum(
-        hits_list
-    )  # Sum how many states changes took place for a certain state after executing a certain action
-
-    for state in states:
-        approximated_prob[current_state][executed_action][state] = (
-            1 + states_hits[current_state][executed_action][state]
-        ) / (prob_denominator + hits_num)
+    pass
 
     return approximated_prob
 
@@ -343,7 +336,7 @@ def systematic_learning(
             "iteration_num"
         ] += 1  # Increase the iteration number of the current state
 
-        approximated_prob = update_approx_prob(
+        approximated_prob = update_approx_prob_uniform_distribution(
             approximated_prob, states_hits, current_state, action_to_execute, states
         )
 
@@ -459,7 +452,7 @@ def explore_least_known_state_action_dijkstra(
                     states, probabilities, current_state, action_to_execute, states_hits
                 )
 
-                approximated_prob = update_approx_prob(
+                approximated_prob = update_approx_prob_uniform_distribution(
                     approximated_prob,
                     states_hits,
                     current_state,
@@ -488,7 +481,7 @@ def explore_least_known_state_action_dijkstra(
                         states_hits,
                     )
 
-                    approximated_prob = update_approx_prob(
+                    approximated_prob = update_approx_prob_uniform_distribution(
                         approximated_prob,
                         states_hits,
                         current_state,
@@ -509,7 +502,7 @@ def explore_least_known_state_action_dijkstra(
                     states, probabilities, current_state, action_to_execute, states_hits
                 )
 
-                approximated_prob = update_approx_prob(
+                approximated_prob = update_approx_prob_uniform_distribution(
                     approximated_prob,
                     states_hits,
                     current_state,
