@@ -93,25 +93,46 @@ def update_approx_prob_states_hits(
 # Updates approximated probabilities (approach dependent on 'update_prob_parameter') - still to implement (now old version)
 def update_approx_prob(
     update_prob_parameter,
+    iterations_num_counter,
+    total_internal_iterations,
     approximated_prob,
     states_hits,
     current_state,
     executed_action,
-    states,
 ):
-    pass
+    if not min_iterations_hits_states_approach_reached:
+        executed_iterations_percentage = (
+            iterations_num_counter / total_internal_iterations
+        )
+        if executed_iterations_percentage < update_prob_parameter:
+            approximated_prob = update_approx_prob_uniform_distribution(
+                approximated_prob, states_hits, current_state, executed_action
+            )
+        else:
+            approximated_prob = calculate_approx_prob_states_hits(
+                approximated_prob, states_hits
+            )
+            min_iterations_hits_states_approach_reached = True
+    else:
+        approximated_prob = update_approx_prob_states_hits(
+            approximated_prob, states_hits, current_state, executed_action
+        )
 
     return approximated_prob
 
 
 def calculate_interal_iterations_number(
-    total_iterations, sys_learn_iterations, dijkstra_iterations
+    outer_iterations, sys_learn_iterations, dijkstra_iterations
 ):
 
     internal_iterations_number = 0
     alternate_function = True  # Flag to switch between two iterations' numbers
 
-    for _ in range(total_iterations):
+    # Input validation
+    if outer_iterations < 0 or sys_learn_iterations < 0 or dijkstra_iterations < 0:
+        raise ValueError("Inputs must be non-negative integers")
+
+    for _ in range(outer_iterations):
 
         if alternate_function:
             internal_iterations_number += sys_learn_iterations
@@ -310,9 +331,8 @@ def systematic_learning(
     states_hits,
     current_state,
     iterations_num,
+    iterations_num_counter,
 ):
-    # DEBUG
-    iterations_num_counter = 0
 
     prob_to_check = (
         []
@@ -560,11 +580,13 @@ def explore_least_known_state_action_dijkstra(
 
 ### ALGORITHM
 
+min_iterations_hits_states_approach_reached = False  # Variable that stores if the minimum number of iterations needed for change in approach for calculating approximated probabilities is reached
+
 
 def my_algo_alternating(
     mdp_object,
     # number of alternating iterations
-    total_iterations,
+    outer_iterations,
     # optional values
     total_threshold=None,
     total_desired_states_hits_num=None,
@@ -578,6 +600,10 @@ def my_algo_alternating(
 
     # Probabilities needed for transitioning from one state to another
     P = mdp_object.probabilities
+
+    # Calculate how many iterations will be executed at least (calculation of probabilities based on uniform distribution/states hits)
+    total_internal_iterations = calculate_interal_iterations_number()
+    global min_iterations_hits_states_approach_reached  # Needed for approach change in calculating approximated probabilities
 
     # Create approximated probabilities
     approximated_prob = assign_initial_approx_probabilities(S, P)
@@ -593,6 +619,10 @@ def my_algo_alternating(
 
     iterations_num = 0
 
+    # Counters that store the value of already executed iterations
+    sys_learn_iterations_num_counter = 0
+    dijkstra_iterations_num_counter = 0
+
     while True:
 
         iterations_num += 1
@@ -606,6 +636,7 @@ def my_algo_alternating(
                     states_hits,
                     current_state,
                     sys_learn_iterations,
+                    sys_learn_iterations_num_counter,
                 )
             )
 
@@ -649,12 +680,12 @@ def my_algo_alternating(
                 states_hits,
                 total_desired_states_hits_num,
             )
-            if iterations_num >= total_iterations and convergence_check:
+            if iterations_num >= outer_iterations and convergence_check:
                 break
         else:
             # DEBUG
-            print("Execution only of if iteration_num >= total_iterations")
-            if iterations_num >= total_iterations:
+            print("total_threshold, total_desired_states_hits == None")
+            if iterations_num >= outer_iterations:
                 approximated_prob = copy.deepcopy(approximated_prob_new)
                 break
 
