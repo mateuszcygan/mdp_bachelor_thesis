@@ -48,23 +48,20 @@ def update_approx_prob_uniform_distribution(
 
     # Calculate new approximation of probabilities
     hits_list = list(states_hits[current_state][executed_action].values())
-    hits_num = sum(
+    hits_sum = sum(
         hits_list
     )  # Sum how many states changes took place for a certain state after executing a certain action
 
     for state in states:
         approximated_prob[current_state][executed_action][state] = (
             1 + states_hits[current_state][executed_action][state]
-        ) / (prob_denominator + hits_num)
+        ) / (prob_denominator + hits_sum)
 
     return approximated_prob
 
 
 # Calculates approximated probabilities based only on states hits
 def calculate_approx_prob_states_hits(approximated_prob, states_hits):
-    print(approximated_prob)
-    print("\n")
-    print(states_hits)
 
     for initial_state, actions in states_hits.items():
         for action, hits in actions.items():
@@ -78,8 +75,19 @@ def calculate_approx_prob_states_hits(approximated_prob, states_hits):
 
 
 # Updates approximated probabilities based only on states hits
-def update_approx_prob_states_hits(approximated_prob, states_hits, executed_action):
-    pass
+def update_approx_prob_states_hits(
+    approximated_prob, states_hits, current_state, executed_action, states
+):
+
+    hits_list = list(states_hits[current_state][executed_action].values())
+    hits_sum = sum(hits_list)
+
+    for state in states:
+        approximated_prob[current_state][executed_action][state] = (
+            states_hits[current_state][executed_action][state] / hits_sum
+        )
+
+    return approximated_prob
 
 
 # Updates approximated probabilities (approach dependent on 'update_prob_parameter') - still to implement (now old version)
