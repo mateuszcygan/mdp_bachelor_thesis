@@ -66,10 +66,14 @@ def calculate_approx_prob_states_hits(approximated_prob, states_hits):
     for initial_state, actions in states_hits.items():
         for action, hits in actions.items():
             denominator = sum(hits.values())
-            for following_state, hits_num in hits.items():
-                approximated_prob[initial_state][action][following_state] = (
-                    hits_num / denominator
-                )
+            if denominator != 0:
+                for following_state, hits_num in hits.items():
+                    approximated_prob[initial_state][action][following_state] = (
+                        hits_num / denominator
+                    )
+            else:
+                for following_state, hits_num in hits.items():
+                    approximated_prob[initial_state][action][following_state] = 0
 
     return approximated_prob
 
@@ -92,30 +96,43 @@ def update_approx_prob_states_hits(
 
 # Updates approximated probabilities (approach dependent on 'update_prob_parameter') - still to implement (now old version)
 def update_approx_prob(
-    update_prob_parameter,
+    update_prob_approach_parameter,
     iterations_num_counter,
     total_internal_iterations,
     approximated_prob,
     states_hits,
     current_state,
     executed_action,
+    states,
 ):
+    global min_iterations_hits_states_approach_reached
+
     if not min_iterations_hits_states_approach_reached:
         executed_iterations_percentage = (
             iterations_num_counter / total_internal_iterations
         )
-        if executed_iterations_percentage < update_prob_parameter:
+
+        if executed_iterations_percentage < update_prob_approach_parameter:
             approximated_prob = update_approx_prob_uniform_distribution(
-                approximated_prob, states_hits, current_state, executed_action
+                approximated_prob, states_hits, current_state, executed_action, states
             )
         else:
+
+            # DEBUG
+            print("Approach change, iteration number:", iterations_num_counter)
+            print("Approximated probabilities (uniform distribution):")
+            mdp.print_mdp_details(approximated_prob)
+
             approximated_prob = calculate_approx_prob_states_hits(
                 approximated_prob, states_hits
             )
+
+            print("Approximated probabilities (states hits):")
+            mdp.print_mdp_details(approximated_prob)
             min_iterations_hits_states_approach_reached = True
     else:
         approximated_prob = update_approx_prob_states_hits(
-            approximated_prob, states_hits, current_state, executed_action
+            approximated_prob, states_hits, current_state, executed_action, states
         )
 
     return approximated_prob
@@ -331,7 +348,10 @@ def systematic_learning(
     states_hits,
     current_state,
     iterations_num,
+    # Arguments needed for approach change in calculating approximated probabilities
+    update_prob_approach_parameter,
     iterations_num_counter,
+    total_internal_iterations,
 ):
 
     prob_to_check = (
@@ -376,8 +396,15 @@ def systematic_learning(
             "iteration_num"
         ] += 1  # Increase the iteration number of the current state
 
-        approximated_prob = update_approx_prob_uniform_distribution(
-            approximated_prob, states_hits, current_state, action_to_execute, states
+        approximated_prob = update_approx_prob(
+            update_prob_approach_parameter,
+            iterations_num_counter,
+            total_internal_iterations,
+            approximated_prob,
+            states_hits,
+            current_state,
+            action_to_execute,
+            states,
         )
 
         # Needed for convergence check outside of systematic_learning (which (state, action) values should be compared)
@@ -405,7 +432,13 @@ def systematic_learning(
 
     # DEBUG
     print("systematic_learning iterations:", iterations_num_counter)
-    return approximated_prob, prob_to_check, states_hits, current_state
+    return (
+        approximated_prob,
+        prob_to_check,
+        states_hits,
+        current_state,
+        iterations_num_counter,
+    )
 
 
 ### EXPLORE LEAST KNOWN STATE
@@ -587,6 +620,7 @@ def my_algo_alternating(
     mdp_object,
     # number of alternating iterations
     outer_iterations,
+    update_prob_approach_parameter,
     # optional values
     total_threshold=None,
     total_desired_states_hits_num=None,
@@ -594,6 +628,7 @@ def my_algo_alternating(
     sys_learn_iterations=0,
     dijkstra_iterations=0,
 ):
+
     # The structure of MDP is known
     A = mdp_object.actions
     S = mdp_object.states
@@ -602,8 +637,11 @@ def my_algo_alternating(
     P = mdp_object.probabilities
 
     # Calculate how many iterations will be executed at least (calculation of probabilities based on uniform distribution/states hits)
-    total_internal_iterations = calculate_interal_iterations_number()
-    global min_iterations_hits_states_approach_reached  # Needed for approach change in calculating approximated probabilities
+    total_internal_iterations = calculate_interal_iterations_number(
+        outer_iterations, sys_learn_iterations, dijkstra_iterations
+    )
+    # global min_iterations_hits_states_approach_reached
+    # Needed for approach change in calculating approximated probabilities
 
     # Create approximated probabilities
     approximated_prob = assign_initial_approx_probabilities(S, P)
@@ -628,16 +666,22 @@ def my_algo_alternating(
         iterations_num += 1
 
         if alternate_function:
-            approximated_prob_new, prob_to_check, states_hits, current_state = (
-                systematic_learning(
-                    S,
-                    P,
-                    approximated_prob,
-                    states_hits,
-                    current_state,
-                    sys_learn_iterations,
-                    sys_learn_iterations_num_counter,
-                )
+            (
+                approximated_prob_new,
+                prob_to_check,
+                states_hits,
+                current_state,
+                sys_learn_iterations_num_counter,
+            ) = systematic_learning(
+                S,
+                P,
+                approximated_prob,
+                states_hits,
+                current_state,
+                sys_learn_iterations,
+                update_prob_approach_parameter,
+                sys_learn_iterations_num_counter,
+                total_internal_iterations,
             )
 
             # DEBUG
