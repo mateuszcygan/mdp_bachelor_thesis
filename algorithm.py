@@ -94,7 +94,7 @@ def update_approx_prob_states_hits(
     return approximated_prob
 
 
-# Updates approximated probabilities (approach dependent on 'update_prob_parameter') - still to implement (now old version)
+# Updates approximated probabilities (change of approach dependent on 'update_prob_parameter')
 def update_approx_prob(
     update_prob_approach_parameter,
     iterations_num_counter,
@@ -353,6 +353,8 @@ def systematic_learning(
     iterations_num_counter,
     total_internal_iterations,
 ):
+    # DEBUG
+    # print("iterations_num_counter systematic_learning:", iterations_num_counter)
 
     prob_to_check = (
         []
@@ -431,7 +433,7 @@ def systematic_learning(
     # )
 
     # DEBUG
-    print("systematic_learning iterations:", iterations_num_counter)
+    # print("systematic_learning iterations:", iterations_num_counter)
     return (
         approximated_prob,
         prob_to_check,
@@ -490,16 +492,23 @@ def explore_least_known_state_action_dijkstra(
     states_hits,
     current_state,
     iterations_num,
+    # Arguments needed for approach change in calculating approximated probabilities
+    update_prob_approach_parameter,
+    iterations_num_counter,
+    total_internal_iterations,
 ):
+    # DEBUG
+    # print("iterations_num_counter explore_least_known_state_action_dijkstra:", iterations_num_counter)
+
     prob_to_check = (
         []
     )  # Array that stores (initial_state, executed_action) after each execution of an action - needed for convergence check outside the function
 
+    i = 0  # variable that counts how many iterations took place (needed for termination condition)
+
     # No execution wanted
     if iterations_num == 0:
         return approximated_prob, prob_to_check, states_hits, current_state
-
-    iterations_num_counter = 0  # Counts how many actions have already been executed
 
     while True:
 
@@ -517,6 +526,8 @@ def explore_least_known_state_action_dijkstra(
 
             # The shortest path is the path that directly leads from current_state to least_visited_state
             if len(shortest_path_actions) == 1:
+                iterations_num_counter += 1
+                i += 1
 
                 # Execute the first and the only action from the shortest_path_actions array
                 action_to_execute = shortest_path_actions[0][current_state]
@@ -525,15 +536,16 @@ def explore_least_known_state_action_dijkstra(
                     states, probabilities, current_state, action_to_execute, states_hits
                 )
 
-                approximated_prob = update_approx_prob_uniform_distribution(
+                approximated_prob = update_approx_prob(
+                    update_prob_approach_parameter,
+                    iterations_num_counter,
+                    total_internal_iterations,
                     approximated_prob,
                     states_hits,
                     current_state,
                     action_to_execute,
                     states,
                 )
-
-                iterations_num_counter += 1
 
                 # Needed for convergence check outside of systematic_learning (which (state, action) values should be compared)
                 prob_to_check.insert(1, (current_state, action_to_execute))
@@ -542,6 +554,9 @@ def explore_least_known_state_action_dijkstra(
 
                 # Fire the least executed action from the least visited state
                 if current_state == least_visited_state:
+                    iterations_num_counter += 1
+                    i += 1
+
                     least_executed_action = get_the_least_executed_action(
                         states_hits, current_state
                     )
@@ -554,15 +569,16 @@ def explore_least_known_state_action_dijkstra(
                         states_hits,
                     )
 
-                    approximated_prob = update_approx_prob_uniform_distribution(
+                    approximated_prob = update_approx_prob(
+                        update_prob_approach_parameter,
+                        iterations_num_counter,
+                        total_internal_iterations,
                         approximated_prob,
                         states_hits,
                         current_state,
                         least_executed_action,
                         states,
                     )
-
-                    iterations_num_counter += 1
 
                 break
 
@@ -575,15 +591,19 @@ def explore_least_known_state_action_dijkstra(
                     states, probabilities, current_state, action_to_execute, states_hits
                 )
 
-                approximated_prob = update_approx_prob_uniform_distribution(
+                iterations_num_counter += 1
+                i += 1
+
+                approximated_prob = update_approx_prob(
+                    update_prob_approach_parameter,
+                    iterations_num_counter,
+                    total_internal_iterations,
                     approximated_prob,
                     states_hits,
                     current_state,
                     action_to_execute,
                     states,
                 )
-
-                iterations_num_counter += 1
 
                 # Needed for convergence check outside of systematic_learning (which (state, action) values should be compared)
                 prob_to_check.insert(1, (current_state, action_to_execute))
@@ -601,14 +621,21 @@ def explore_least_known_state_action_dijkstra(
                     break
 
         # Case with performing a certain number of iterations
-        if iterations_num_counter >= iterations_num:
+        if i >= iterations_num:
             break
 
     # DEBUG
-    print(
-        "explore_least_known_state_action_dijkstra iterations:", iterations_num_counter
+    # print(
+    #     "explore_least_known_state_action_dijkstra iterations:", iterations_num_counter
+    # )
+
+    return (
+        approximated_prob,
+        prob_to_check,
+        states_hits,
+        current_state,
+        iterations_num_counter,
     )
-    return approximated_prob, prob_to_check, states_hits, current_state
 
 
 ### ALGORITHM
@@ -658,8 +685,7 @@ def my_algo_alternating(
     iterations_num = 0
 
     # Counters that store the value of already executed iterations
-    sys_learn_iterations_num_counter = 0
-    dijkstra_iterations_num_counter = 0
+    iterations_num_counter = 0
 
     while True:
 
@@ -671,18 +697,25 @@ def my_algo_alternating(
                 prob_to_check,
                 states_hits,
                 current_state,
-                sys_learn_iterations_num_counter,
+                iterations_num_counter,
             ) = systematic_learning(
                 S,
                 P,
-                approximated_prob,
+                approximated_prob_new,
                 states_hits,
                 current_state,
                 sys_learn_iterations,
                 update_prob_approach_parameter,
-                sys_learn_iterations_num_counter,
+                iterations_num_counter,
                 total_internal_iterations,
             )
+
+            # DEBUG
+            # print("approximated_prob_new")
+            # mdp.print_mdp_details(approximated_prob_new)
+            # print("\n")
+            # print("approximated_prob")
+            # mdp.print_mdp_details(approximated_prob)
 
             # DEBUG
             # systematic_state_action_hits = calculate_state_action_hits(states_hits)
@@ -693,15 +726,22 @@ def my_algo_alternating(
             # print("\n\n\n")
 
         else:
-            approximated_prob_new, prob_to_check, states_hits, current_state = (
-                explore_least_known_state_action_dijkstra(
-                    S,
-                    P,
-                    approximated_prob,
-                    states_hits,
-                    current_state,
-                    dijkstra_iterations,
-                )
+            (
+                approximated_prob_new,
+                prob_to_check,
+                states_hits,
+                current_state,
+                iterations_num_counter,
+            ) = explore_least_known_state_action_dijkstra(
+                S,
+                P,
+                approximated_prob_new,
+                states_hits,
+                current_state,
+                dijkstra_iterations,
+                update_prob_approach_parameter,
+                iterations_num_counter,
+                total_internal_iterations,
             )
 
             # DEBUG
@@ -732,8 +772,6 @@ def my_algo_alternating(
             if iterations_num >= outer_iterations:
                 approximated_prob = copy.deepcopy(approximated_prob_new)
                 break
-
-        approximated_prob = copy.deepcopy(approximated_prob_new)
 
     print("Total iteration number:", iterations_num)
     return approximated_prob, states_hits
