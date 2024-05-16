@@ -152,30 +152,6 @@ def update_approx_prob(
     return approximated_prob
 
 
-def calculate_interal_iterations_number(
-    outer_iterations, sys_learn_iterations, dijkstra_iterations
-):
-
-    internal_iterations_number = 0
-    alternate_function = True  # Flag to switch between two iterations' numbers
-
-    # Input validation
-    if outer_iterations < 0 or sys_learn_iterations < 0 or dijkstra_iterations < 0:
-        raise ValueError("Inputs must be non-negative integers")
-
-    for _ in range(outer_iterations):
-
-        if alternate_function:
-            internal_iterations_number += sys_learn_iterations
-
-        else:
-            internal_iterations_number += dijkstra_iterations
-
-        alternate_function = not alternate_function
-
-    return internal_iterations_number
-
-
 ### FUNCTIONS RELATED TO 'states_hits' dictionary
 
 
@@ -270,49 +246,6 @@ def check_desired_state_action_hits_num(states_hits, desired_states_hits_num):
 
 
 ### CONVERGENCE
-def check_prob_convergence(states, threshold, approximated_prob, approximated_prob_new):
-
-    exe_actions = (
-        []
-    )  # List with possible actions from each state (needed for convergence)
-    for state in states:
-        exe_actions.append(mdp.get_possible_actions(approximated_prob, state))
-
-    # Check convergence
-    convergence = True
-
-    for init_state, exe_action_list in zip(states, exe_actions):
-        for exe_action in exe_action_list:
-            for following_state in states:
-                convergence = convergence and (
-                    abs(
-                        approximated_prob[init_state][exe_action][following_state]
-                        - approximated_prob_new[init_state][exe_action][following_state]
-                    )
-                    < threshold
-                )
-    return convergence
-
-
-def check_specific_prob_convergence(
-    approximated_prob,
-    approximated_prob_new,
-    prob_to_check,
-    threshold,
-):
-    convergence = True
-
-    for state, action in prob_to_check:
-
-        prob_to_check_old = approximated_prob[state][action].items()
-        prob_to_check_new = approximated_prob_new[state][action].items()
-
-        for (k1, v1), (k2, v2) in zip(prob_to_check_old, prob_to_check_new):
-            convergence = convergence and (v1 - v2 < threshold)
-
-    return convergence
-
-
 def convergence(
     approximated_prob,
     approximated_prob_new,
@@ -478,21 +411,6 @@ def get_least_visited_state(states_hits, current_visit_state):
         return second_smallest_state
 
     return state_with_smallest_hits_num
-
-
-# Returns an action with the highest transition probability for a certain state
-def get_max_prob_action(current_state, state_with_smallest_hits, probabilities):
-    max_probability = 0
-    action_to_execute = None
-
-    # Iterate over the actions for the current state
-    for action, transitions in probabilities[current_state].items():
-        # Check if the probability for the state with the smallest hits is the maximum so far
-        if transitions[state_with_smallest_hits] > max_probability:
-            max_probability = transitions[state_with_smallest_hits]
-            action_to_execute = action
-
-    return max_probability, action_to_execute
 
 
 ### DIJKSTRA ALGORITHM
