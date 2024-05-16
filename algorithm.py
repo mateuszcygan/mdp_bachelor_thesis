@@ -1,4 +1,5 @@
 import copy
+import math
 import random
 
 import dijkstra
@@ -97,38 +98,51 @@ def update_approx_prob_states_hits(
 # Updates approximated probabilities (change of approach dependent on 'update_prob_parameter')
 def update_approx_prob(
     update_prob_approach_parameter,
-    iterations_num_counter,
-    total_internal_iterations,
+    iterations_num_counter,  # for debugging purposes
     approximated_prob,
     states_hits,
     current_state,
     executed_action,
     states,
 ):
-    global min_iterations_hits_states_approach_reached
+    global min_iterations_hits_states_approach_reached  # Needed for the approach change - all probabilities are calculated newly
 
     if not min_iterations_hits_states_approach_reached:
-        executed_iterations_percentage = (
-            iterations_num_counter / total_internal_iterations
+
+        desired_states_hits_num_check_approach_change = (
+            check_desired_state_action_hits_num(
+                states_hits, update_prob_approach_parameter
+            )
         )
 
-        if executed_iterations_percentage < update_prob_approach_parameter:
+        if not desired_states_hits_num_check_approach_change:
             approximated_prob = update_approx_prob_uniform_distribution(
                 approximated_prob, states_hits, current_state, executed_action, states
             )
         else:
-
             # DEBUG
-            print("Approach change, iteration number:", iterations_num_counter)
+            print(
+                "\n\n\nCalculation approach changed after",
+                iterations_num_counter,
+                "iterations.",
+            )
+
+            state_action_hits_sum = calculate_state_action_hits(states_hits)
+            print(state_action_hits_sum)
+
             print("Approximated probabilities (uniform distribution):")
             mdp.print_mdp_details(approximated_prob)
+            # DEBUG
 
             approximated_prob = calculate_approx_prob_states_hits(
                 approximated_prob, states_hits
             )
 
+            # DEBUG
             print("Approximated probabilities (states hits):")
             mdp.print_mdp_details(approximated_prob)
+            # DEBUG
+
             min_iterations_hits_states_approach_reached = True
     else:
         approximated_prob = update_approx_prob_states_hits(
@@ -249,7 +263,8 @@ def check_desired_state_action_hits_num(states_hits, desired_states_hits_num):
                 hits_num >= desired_states_hits_num
             )
 
-    print("min_hits_num_check:", min_hits_num_check)
+    # DEBUG
+    # print("min_hits_num_check:", min_hits_num_check)
 
     return min_hits_num_check
 
@@ -306,14 +321,12 @@ def convergence(
     states_hits,
     desired_states_hits_num,
 ):
-    desired_states_hits_num_check = (
-        True  # For cases where number of state's hits is not considered
-    )
 
-    if desired_states_hits_num is not None:
-        desired_states_hits_num_check = check_desired_state_action_hits_num(
-            states_hits, desired_states_hits_num
-        )
+    desired_states_hits_num_check = check_desired_state_action_hits_num(
+        states_hits, desired_states_hits_num
+    )
+    # DEBUG
+    # print("desired_states_hits_num_check:", desired_states_hits_num_check)
 
     # Check convergence
     convergence = True
@@ -326,7 +339,8 @@ def convergence(
         for (k1, v1), (k2, v2) in zip(prob_to_check_old, prob_to_check_new):
             convergence = convergence and (abs(v1 - v2) < threshold)
 
-    print("convergence:", convergence)
+    # DEBUG
+    # print("convergence:", convergence)
 
     # Check convergence and desired number of states hits
     convergence = desired_states_hits_num_check and convergence
@@ -348,10 +362,8 @@ def systematic_learning(
     states_hits,
     current_state,
     iterations_num,
-    # Arguments needed for approach change in calculating approximated probabilities
-    update_prob_approach_parameter,
+    update_prob_approach_parameter,  # needed for approach change in calculating approximated probabilities
     iterations_num_counter,
-    total_internal_iterations,
 ):
     # DEBUG
     # print("iterations_num_counter systematic_learning:", iterations_num_counter)
@@ -362,7 +374,13 @@ def systematic_learning(
 
     # No execution wanted
     if iterations_num == 0:
-        return approximated_prob, prob_to_check, states_hits, current_state
+        return (
+            approximated_prob,
+            prob_to_check,
+            states_hits,
+            current_state,
+            iterations_num_counter,
+        )
 
     # state_actions - dict that involves data allowing for alternating execution of actions
     # iteration_num - number of transitions to certain state
@@ -401,7 +419,6 @@ def systematic_learning(
         approximated_prob = update_approx_prob(
             update_prob_approach_parameter,
             iterations_num_counter,
-            total_internal_iterations,
             approximated_prob,
             states_hits,
             current_state,
@@ -433,7 +450,7 @@ def systematic_learning(
     # )
 
     # DEBUG
-    # print("systematic_learning iterations:", iterations_num_counter)
+    print("systematic_learning iterations:", iterations_num_counter)
     return (
         approximated_prob,
         prob_to_check,
@@ -492,10 +509,8 @@ def explore_least_known_state_action_dijkstra(
     states_hits,
     current_state,
     iterations_num,
-    # Arguments needed for approach change in calculating approximated probabilities
-    update_prob_approach_parameter,
+    update_prob_approach_parameter,  # needed for approach change in calculating approximated probabilities
     iterations_num_counter,
-    total_internal_iterations,
 ):
     # DEBUG
     # print("iterations_num_counter explore_least_known_state_action_dijkstra:", iterations_num_counter)
@@ -539,7 +554,6 @@ def explore_least_known_state_action_dijkstra(
                 approximated_prob = update_approx_prob(
                     update_prob_approach_parameter,
                     iterations_num_counter,
-                    total_internal_iterations,
                     approximated_prob,
                     states_hits,
                     current_state,
@@ -572,7 +586,6 @@ def explore_least_known_state_action_dijkstra(
                     approximated_prob = update_approx_prob(
                         update_prob_approach_parameter,
                         iterations_num_counter,
-                        total_internal_iterations,
                         approximated_prob,
                         states_hits,
                         current_state,
@@ -597,7 +610,6 @@ def explore_least_known_state_action_dijkstra(
                 approximated_prob = update_approx_prob(
                     update_prob_approach_parameter,
                     iterations_num_counter,
-                    total_internal_iterations,
                     approximated_prob,
                     states_hits,
                     current_state,
@@ -625,9 +637,9 @@ def explore_least_known_state_action_dijkstra(
             break
 
     # DEBUG
-    # print(
-    #     "explore_least_known_state_action_dijkstra iterations:", iterations_num_counter
-    # )
+    print(
+        "explore_least_known_state_action_dijkstra iterations:", iterations_num_counter
+    )
 
     return (
         approximated_prob,
@@ -647,10 +659,10 @@ def my_algo_alternating(
     mdp_object,
     # number of alternating iterations
     outer_iterations,
-    update_prob_approach_parameter,
-    # optional values
+    # "optional" values
+    desired_states_hits_update_percentage,
+    total_desired_states_hits_num,
     total_threshold=None,
-    total_desired_states_hits_num=None,
     # number of iterations
     sys_learn_iterations=0,
     dijkstra_iterations=0,
@@ -663,13 +675,6 @@ def my_algo_alternating(
     # Probabilities needed for transitioning from one state to another
     P = mdp_object.probabilities
 
-    # Calculate how many iterations will be executed at least (calculation of probabilities based on uniform distribution/states hits)
-    total_internal_iterations = calculate_interal_iterations_number(
-        outer_iterations, sys_learn_iterations, dijkstra_iterations
-    )
-    # global min_iterations_hits_states_approach_reached
-    # Needed for approach change in calculating approximated probabilities
-
     # Create approximated probabilities
     approximated_prob = assign_initial_approx_probabilities(S, P)
     approximated_prob_new = copy.deepcopy(
@@ -681,6 +686,10 @@ def my_algo_alternating(
 
     current_state = "s0"  # Start at state 's0'
     alternate_function = True  # Flag to switch between functions
+
+    update_prob_approach_parameter = math.floor(
+        desired_states_hits_update_percentage * total_desired_states_hits_num
+    )
 
     iterations_num = 0
 
@@ -707,7 +716,6 @@ def my_algo_alternating(
                 sys_learn_iterations,
                 update_prob_approach_parameter,
                 iterations_num_counter,
-                total_internal_iterations,
             )
 
             # DEBUG
@@ -741,7 +749,6 @@ def my_algo_alternating(
                 dijkstra_iterations,
                 update_prob_approach_parameter,
                 iterations_num_counter,
-                total_internal_iterations,
             )
 
             # DEBUG
