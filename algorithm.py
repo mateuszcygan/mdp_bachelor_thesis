@@ -305,8 +305,8 @@ def convergence(
 
 
 def systematic_learning(
-    states,
-    probabilities,
+    mdp_object,
+    learned_rewards,
     approximated_prob,
     states_hits,
     current_state,
@@ -314,27 +314,35 @@ def systematic_learning(
     update_prob_approach_parameter,  # needed for approach change in calculating approximated probabilities
     iterations_num_counter,
 ):
+
     # DEBUG
     # print("iterations_num_counter systematic_learning:", iterations_num_counter)
-
-    prob_to_check = (
-        []
-    )  # Array that stores (initial_state, executed_action) after each execution of an action - needed for convergence check outside the function
 
     # No execution wanted
     if iterations_num == 0:
         return (
             approximated_prob,
+            learned_rewards,
             prob_to_check,
             states_hits,
             current_state,
             iterations_num_counter,
         )
 
+    # Knowledge about the mdp_object needed for execution of an action
+    probabilities = mdp_object.probabilities
+    rewards = mdp_object.rewards
+
+    prob_to_check = (
+        []
+    )  # Array that stores (initial_state, executed_action) after each execution of an action - needed for convergence check outside the function
+
     # state_actions - dict that involves data allowing for alternating execution of actions
     # iteration_num - number of transitions to certain state
     # actions_num - number of executable actions for a certain state
     # actions - array that contains executable actions for a certain state
+    states = mdp_object.states
+
     state_actions = {
         state: {"iteration_num": 0, "actions_num": None, "actions": None}
         for state in states
@@ -402,6 +410,7 @@ def systematic_learning(
     print("systematic_learning iterations:", iterations_num_counter)
     return (
         approximated_prob,
+        learned_rewards,
         prob_to_check,
         states_hits,
         current_state,
@@ -437,8 +446,8 @@ def get_least_visited_state(states_hits, current_visit_state):
 # 1) the 'shortest_path_actions' can include more than one action to execute for the last iteration and the desired state(s) are reached
 # 2) another one additional iteration: we transition to the least_visited_state and then execute the 'least_executed_action'
 def explore_least_known_state_action_dijkstra(
-    states,
-    probabilities,
+    mdp_object,
+    learned_rewards,
     approximated_prob,
     states_hits,
     current_state,
@@ -457,7 +466,20 @@ def explore_least_known_state_action_dijkstra(
 
     # No execution wanted
     if iterations_num == 0:
-        return approximated_prob, prob_to_check, states_hits, current_state
+        return (
+            approximated_prob,
+            learned_rewards,
+            prob_to_check,
+            states_hits,
+            current_state,
+            iterations_num_counter,
+        )
+
+    # Knowledge about the mdp_object needed for execution of an action
+    probabilities = mdp_object.probabilities
+    rewards = mdp_object.rewards
+
+    states = mdp_object.states
 
     while True:
 
@@ -577,6 +599,7 @@ def explore_least_known_state_action_dijkstra(
 
     return (
         approximated_prob,
+        learned_rewards,
         prob_to_check,
         states_hits,
         current_state,
@@ -618,7 +641,7 @@ def my_algo_alternating(
     )  # needed for convergence check
 
     # Create rewards dictionary where learned rewards will be stored
-    lerned_rewards = create_learned_rewards(R)
+    learned_rewards = create_learned_rewards(R)
 
     # Store in states_hits how many times a transition to a certain state took place
     states_hits = create_states_hits_dictionary(P)
@@ -642,13 +665,14 @@ def my_algo_alternating(
         if alternate_function:
             (
                 approximated_prob_new,
+                learned_rewards,
                 prob_to_check,
                 states_hits,
                 current_state,
                 iterations_num_counter,
             ) = systematic_learning(
-                S,
-                P,
+                mdp_object,
+                learned_rewards,
                 approximated_prob_new,
                 states_hits,
                 current_state,
@@ -675,13 +699,14 @@ def my_algo_alternating(
         else:
             (
                 approximated_prob_new,
+                learned_rewards,
                 prob_to_check,
                 states_hits,
                 current_state,
                 iterations_num_counter,
             ) = explore_least_known_state_action_dijkstra(
-                S,
-                P,
+                mdp_object,
+                learned_rewards,
                 approximated_prob_new,
                 states_hits,
                 current_state,
