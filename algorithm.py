@@ -24,6 +24,22 @@ def assign_initial_approx_probabilities(states, probabilities):
     return approximated_prob
 
 
+# create dictionary with rewards (all values are set to 0.0)
+# 0.0 - double type to distinction between changed and not changed values
+def set_values_to_zero(d):
+    for key, value in d.items():
+        if isinstance(value, dict):
+            set_values_to_zero(value)
+        else:
+            d[key] = 0.0
+
+
+def create_learned_rewards(rewards):
+    learned_rewards = copy.deepcopy(rewards)
+    set_values_to_zero(learned_rewards)
+    return learned_rewards
+
+
 # Note: states_hits sum is increased for current state (for state from which we fired an action)
 # in next iteration the sum will be increased in the state to which the transition took place
 def execute_action(states, probabilities, current_state, executed_action, states_hits):
@@ -593,11 +609,16 @@ def my_algo_alternating(
     # Probabilities needed for transitioning from one state to another
     P = mdp_object.probabilities
 
+    R = mdp_object.rewards
+
     # Create approximated probabilities
     approximated_prob = assign_initial_approx_probabilities(S, P)
     approximated_prob_new = copy.deepcopy(
         approximated_prob
     )  # needed for convergence check
+
+    # Create rewards dictionary where learned rewards will be stored
+    lerned_rewards = create_learned_rewards(R)
 
     # Store in states_hits how many times a transition to a certain state took place
     states_hits = create_states_hits_dictionary(P)
