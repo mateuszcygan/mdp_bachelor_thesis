@@ -52,8 +52,6 @@ def execute_action(
     states_hits,
 ):
 
-    reward = 0
-
     # Get probabilities of transitioning to other states (needed for transition execution)
     states_prob = mdp.get_foll_states_prob_values(
         probabilities, current_state, executed_action
@@ -61,9 +59,20 @@ def execute_action(
 
     next_state = random.choices(states, weights=states_prob)[0]
 
-    states_hits[current_state][executed_action][next_state] += 1
+    state_hit = states_hits[current_state][executed_action]
+    reward = rewards[current_state][executed_action][
+        next_state
+    ]  # extract the collected reward
+    learned_reward = learned_rewards[current_state][executed_action]
 
-    return next_state, states_hits
+    # Check and assign the reward if it hasn't been collected before
+    if state_hit[next_state] == 0:
+        learned_reward[next_state] = reward
+
+    # Increment the state hits count
+    state_hit[next_state] += 1
+
+    return next_state, reward, learned_rewards, states_hits
 
 
 # Calculates approximated probabilities with uniform distribution initialization
@@ -147,17 +156,17 @@ def update_approx_prob(
             )
         else:
             # DEBUG
-            print(
-                "\n\n\nCalculation approach changed after",
-                iterations_num_counter,
-                "iterations.",
-            )
+            # print(
+            #     "\n\n\nCalculation approach changed after",
+            #     iterations_num_counter,
+            #     "iterations.",
+            # )
 
-            state_action_hits_sum = calculate_state_action_hits(states_hits)
-            print(state_action_hits_sum)
+            # state_action_hits_sum = calculate_state_action_hits(states_hits)
+            # print(state_action_hits_sum)
 
-            print("Approximated probabilities (uniform distribution):")
-            mdp.print_mdp_details(approximated_prob)
+            # print("Approximated probabilities (uniform distribution):")
+            # mdp.print_mdp_details(approximated_prob)
             # DEBUG
 
             approximated_prob = calculate_approx_prob_states_hits(
@@ -165,8 +174,8 @@ def update_approx_prob(
             )
 
             # DEBUG
-            print("Approximated probabilities (states hits):")
-            mdp.print_mdp_details(approximated_prob)
+            # print("Approximated probabilities (states hits):")
+            # mdp.print_mdp_details(approximated_prob)
             # DEBUG
 
             min_iterations_hits_states_approach_reached = True
@@ -381,7 +390,7 @@ def systematic_learning(
             action_to_execute_index
         ]
 
-        next_state, states_hits = execute_action(
+        next_state, reward, learned_rewards, states_hits = execute_action(
             states,
             probabilities,
             rewards,
@@ -390,6 +399,8 @@ def systematic_learning(
             action_to_execute,
             states_hits,
         )
+
+        rewards_sum += reward
 
         state_actions[current_state][
             "iteration_num"
@@ -536,7 +547,7 @@ def explore_least_known_state_action_dijkstra(
                 # Execute the first and the only action from the shortest_path_actions array
                 action_to_execute = shortest_path_actions[0][current_state]
 
-                next_state, states_hits = execute_action(
+                next_state, reward, learned_rewards, states_hits = execute_action(
                     states,
                     probabilities,
                     rewards,
@@ -545,6 +556,8 @@ def explore_least_known_state_action_dijkstra(
                     action_to_execute,
                     states_hits,
                 )
+
+                rewards_sum += reward
 
                 approximated_prob = update_approx_prob(
                     update_prob_approach_parameter,
@@ -570,7 +583,7 @@ def explore_least_known_state_action_dijkstra(
                         states_hits, current_state
                     )
 
-                    next_state, states_hits = execute_action(
+                    next_state, reward, learned_rewards, states_hits = execute_action(
                         states,
                         probabilities,
                         rewards,
@@ -579,6 +592,8 @@ def explore_least_known_state_action_dijkstra(
                         least_executed_action,
                         states_hits,
                     )
+
+                    rewards_sum += reward
 
                     approximated_prob = update_approx_prob(
                         update_prob_approach_parameter,
@@ -597,7 +612,7 @@ def explore_least_known_state_action_dijkstra(
 
                 action_to_execute = shortest_path_actions[0][current_state]
 
-                next_state, states_hits = execute_action(
+                next_state, reward, learned_rewards, states_hits = execute_action(
                     states,
                     probabilities,
                     rewards,
@@ -606,6 +621,8 @@ def explore_least_known_state_action_dijkstra(
                     action_to_execute,
                     states_hits,
                 )
+
+                rewards_sum += reward
 
                 iterations_num_counter += 1
                 i += 1
@@ -783,7 +800,7 @@ def my_algo_alternating(
         # Toggle the flag for the next iteration
         alternate_function = not alternate_function
 
-        if total_threshold is not None and total_desired_states_hits_num is not None:
+        if total_threshold is not None:
             convergence_check, prob_to_check, approximated_prob = convergence(
                 approximated_prob,
                 approximated_prob_new,
@@ -795,14 +812,12 @@ def my_algo_alternating(
             if iterations_num >= outer_iterations and convergence_check:
                 break
         else:
-            # DEBUG
-            print("total_threshold, total_desired_states_hits == None")
             if iterations_num >= outer_iterations:
                 approximated_prob = copy.deepcopy(approximated_prob_new)
                 break
 
     print("Total iteration number:", iterations_num)
-    return approximated_prob, states_hits
+    return approximated_prob, learned_rewards, rewards_sum, states_hits
 
     # PRINTS FOR DEBUGGING
     # hits_sum = calculate_states_hits(states_hits)
