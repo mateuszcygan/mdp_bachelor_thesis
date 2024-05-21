@@ -5,6 +5,28 @@ import mdp
 import policies
 
 
+# finds the biggest and the smallest reward within the 'learned_rewards' dictionary
+def find_rewards_extremes(learned_rewards):
+
+    rewards_extremes = {"min_reward": 0, "max_reward": 0}
+
+    find_rewards_extremes_recursive(learned_rewards, rewards_extremes)
+
+    return rewards_extremes
+
+
+def find_rewards_extremes_recursive(learned_rewards, rewards_extremes):
+
+    for key, value in learned_rewards.items():
+        if isinstance(value, dict):
+            find_rewards_extremes_recursive(value, rewards_extremes)
+        else:
+            if value > rewards_extremes["max_reward"]:
+                rewards_extremes["max_reward"] = value
+            elif value < rewards_extremes["min_reward"]:
+                rewards_extremes["min_reward"] = value
+
+
 # after a certain number of iterations, value iteration is calculated and agent starts to follow calculated strategy
 def iterations_num_strategy(
     # needed for 'iterations_number_approach'
