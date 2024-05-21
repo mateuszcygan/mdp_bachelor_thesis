@@ -6,7 +6,7 @@ import policies
 
 
 # after a certain number of iterations, value iteration is calculated and agent starts to follow calculated strategy
-def iterations_number_approach(
+def iterations_num_strategy(
     # needed for 'iterations_number_approach'
     mdp_object,
     overall_iterations_num,
@@ -17,6 +17,9 @@ def iterations_number_approach(
     desired_states_hits_update_percentage,
     total_desired_states_hits_num,
     total_threshold,
+    # needed for value_iteration
+    value_iteration_threshold,
+    value_iteration_dis_factor,
 ):
 
     # Calculations for case when when the number of iterations in different approaches can't be exactly estimated (doubles)
@@ -38,4 +41,8 @@ def iterations_number_approach(
             sys_learn_iterations,
             dijkstra_iterations,
         )
+    )
+
+    V, policy = policies.value_iteration(
+        mdp_object, value_iteration_threshold, value_iteration_dis_factor
     )
