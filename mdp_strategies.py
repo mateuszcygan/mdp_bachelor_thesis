@@ -63,6 +63,41 @@ def update_value_iteration_policy_rewards(
     return V, policy
 
 
+# checks if there was an enough big change (value_iteration_prob_recalculation_parameter) between two probabilities
+# so that value iteration should be recalculated (or - only one such change needed)
+def recalculate_value_iteration_prob_difference(
+    value_iteration_prob_recalculation_parameter,
+    current_state,
+    executed_action,
+    approximated_prob,
+    approximated_prob_new,
+):
+    recalculate_value_iteration = False
+    tolerance = (
+        1e-9  # A small tolerance value - inprecision of floating point arithmetic
+    )
+
+    prob_to_check_old = approximated_prob[current_state][executed_action].items()
+    prob_to_check_new = approximated_prob_new[current_state][executed_action].items()
+
+    for (k1, v1), (k2, v2) in zip(prob_to_check_old, prob_to_check_new):
+
+        prob_difference = abs(v1 - v2)
+        is_close = math.isclose(
+            prob_difference,
+            value_iteration_prob_recalculation_parameter,
+            rel_tol=tolerance,
+        )
+
+        recalculate_value_iteration = (
+            recalculate_value_iteration
+            or is_close
+            or (prob_difference >= value_iteration_prob_recalculation_parameter)
+        )
+
+    return recalculate_value_iteration
+
+
 # after a certain number of iterations, value iteration is calculated and agent starts to follow calculated strategy
 def iterations_num_strategy(
     # needed for 'iterations_number_approach'
@@ -78,6 +113,7 @@ def iterations_num_strategy(
     # needed for value_iteration
     value_iteration_threshold,
     value_iteration_dis_factor,
+    value_iteration_prob_recalculation_parameter,
 ):
 
     # Things that are NOT known about the MDP object for agent, but required to execute an action
