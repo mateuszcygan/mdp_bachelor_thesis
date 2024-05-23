@@ -814,10 +814,20 @@ def my_algo_alternating(
         else:
             if iterations_num >= outer_iterations:
                 approximated_prob = copy.deepcopy(approximated_prob_new)
+
                 break
 
-    print("Total iteration number:", iterations_num)
-    return approximated_prob, learned_rewards, rewards_sum, states_hits
+    # DEBUG
+    print("Total iterations number:", iterations_num)
+
+    return (
+        approximated_prob,
+        learned_rewards,
+        rewards_sum,
+        states_hits,
+        current_state,
+        iterations_num_counter,
+    )
 
     # PRINTS FOR DEBUGGING
     # hits_sum = calculate_states_hits(states_hits)

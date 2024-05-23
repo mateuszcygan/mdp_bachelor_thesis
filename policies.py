@@ -125,20 +125,12 @@ def value_iteration(mdp_object, threshold, discount_factor):
                 max_value  # Set maximum of calculated values as a new value for current_state
             )
 
-        # Termination condition
-        # print("Old value function:")
-        # print_value_function(V)
-        # print('\n')
-        # print("New value function:")
-        # print_value_function(V_new)
-        # print("\n")
-
         # Check convergence
         if all(abs(V[s] - V_new[s]) < threshold for s in S):
             # print("Number of iterations: ", i)
             return V_new, policy
 
-        print_action_policy_value(S, policy, V)
+        # print_action_policy_value(S, policy, V)
 
         V = copy.deepcopy(V_new)
 
