@@ -288,14 +288,21 @@ def desired_mdp_knowledge_check(strategy_desired_states_hits_termination, states
 
     visited_tuple_num = 0  # stores how many (state, action) tupels were already visited
 
-    print(state_action_hits)
-
     for state, actions in state_action_hits.items():
         for action, hits in actions.items():
             if hits > 0:
                 visited_tuple_num += 1
 
     if visited_tuple_num >= strategy_desired_states_hits_termination:
+
+        # DEBUG
+        print("state_action_hits:", state_action_hits)
+        print("visited_tuple_num:", visited_tuple_num)
+        print(
+            "strategy_desired_states_hits_termination:",
+            strategy_desired_states_hits_termination,
+        )
+
         return True
     else:
         return False
@@ -678,9 +685,9 @@ def explore_least_known_state_action_dijkstra(
             break
 
     # DEBUG
-    print(
-        "explore_least_known_state_action_dijkstra iterations:", iterations_num_counter
-    )
+    # print(
+    #     "explore_least_known_state_action_dijkstra iterations:", iterations_num_counter
+    # )
 
     return (
         # elements related to rewards
@@ -845,6 +852,10 @@ def my_algo_alternating(
                 )
                 if iterations_num >= outer_iterations or desired_mdp_knowledge:
                     approximated_prob = copy.deepcopy(approximated_prob_new)
+                    print(
+                        "if iterations_num >= outer_iterations or desired_mdp_knowledge == True, iterations_num_counter:",
+                        iterations_num_counter,
+                    )
                     break
 
     # DEBUG
