@@ -280,6 +280,27 @@ def check_desired_state_action_hits_num(states_hits, desired_states_hits_num):
     return min_hits_num_check
 
 
+# MDP_KNOWLEDGE_STRATEGY
+# checks if the agent know the desired percentage of the mdp
+def desired_mdp_knowledge_check(strategy_desired_states_hits_termination, states_hits):
+
+    state_action_hits = calculate_state_action_hits(states_hits)
+
+    visited_tuple_num = 0  # stores how many (state, action) tupels were already visited
+
+    print(state_action_hits)
+
+    for state, actions in state_action_hits.items():
+        for action, hits in actions.items():
+            if hits > 0:
+                visited_tuple_num += 1
+
+    if visited_tuple_num >= strategy_desired_states_hits_termination:
+        return True
+    else:
+        return False
+
+
 ### CONVERGENCE
 def convergence(
     approximated_prob,
@@ -692,6 +713,8 @@ def my_algo_alternating(
     # number of iterations
     sys_learn_iterations=0,
     dijkstra_iterations=0,
+    # number of different states_hits for termination (mdp_knowledge_strategy)
+    strategy_desired_states_hits_termination=None,
 ):
 
     # The structure of MDP is known
@@ -811,11 +834,18 @@ def my_algo_alternating(
             )
             if iterations_num >= outer_iterations and convergence_check:
                 break
-        else:
-            if iterations_num >= outer_iterations:
-                approximated_prob = copy.deepcopy(approximated_prob_new)
-
-                break
+        else:  # total_threshold IS None
+            if strategy_desired_states_hits_termination is None:
+                if iterations_num >= outer_iterations:
+                    approximated_prob = copy.deepcopy(approximated_prob_new)
+                    break
+            else:  # total_threshold IS None "and" strategy_desired_states_hits_termination IS NOT None
+                desired_mdp_knowledge = desired_mdp_knowledge_check(
+                    strategy_desired_states_hits_termination, states_hits
+                )
+                if iterations_num >= outer_iterations or desired_mdp_knowledge:
+                    approximated_prob = copy.deepcopy(approximated_prob_new)
+                    break
 
     # DEBUG
     print("Total iterations number:", iterations_num)

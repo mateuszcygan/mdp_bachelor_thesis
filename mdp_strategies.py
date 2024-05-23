@@ -1,5 +1,6 @@
 import copy
 import math
+import sys
 
 import algorithm
 import mdp
@@ -220,8 +221,70 @@ def iterations_num_strategy(
 
         if iterations_num_counter >= overall_iterations_num:
 
+            # DEBUG
+            print("policy:", policy)
+
             approximated_mdp.probabilities = copy.deepcopy(approx_mdp_prob_new)
             approximated_mdp.rewards = copy.deepcopy(approx_mdp_learned_rewards)
             break
 
     return approximated_mdp, rewards_sum
+
+
+# after a certain percentage of whole network is known (based on states_hits), agent starts to follow calculated strategy
+def mdp_knowledge_strategy(
+    # needed for "network_knowledge_strategy"
+    mdp_object,
+    overall_iterations_num,
+    # needed for my_algo_alternating
+    mdp_knowledge_percentage,  # after a certain percentage of the network is known, the exploring phase ends and agents start exploition based on calculations from value iteration
+    sys_learn_iterations,
+    dijkstra_iterations,
+    desired_states_hits_update_percentage,
+    total_desired_states_hits_num,
+    total_threshold,
+    # needed for value_iteration
+    value_iteration_threshold,
+    value_iteration_dis_factor,
+    value_iteration_prob_recalculation,
+):
+    # Things that are NOT known about the MDP object for agent, but required to execute an action
+    states = mdp_object.states
+    actions = mdp_object.actions
+    probabilities = mdp_object.probabilities
+    rewards = mdp_object.rewards
+
+    # calculate how many tuples (state, action) exist for a given mdp
+    state_action_num = len(states) * len(actions)
+
+    # calculate after how many different state_action hits 'my_algo_alternating' should terminate
+    strategy_desired_states_hits_termination = math.floor(
+        state_action_num * mdp_knowledge_percentage
+    )
+
+    # calculate how many iterations at the maximum can be performed in 'my_algo_alternating'
+    # for the case that the desired number of "mdp_knowledge" can't be achieved
+    outer_iterations = math.floor(
+        overall_iterations_num / (sys_learn_iterations + dijkstra_iterations)
+    )
+
+    (
+        approximated_prob,
+        learned_rewards,
+        rewards_sum,
+        states_hits,
+        current_state,
+        iterations_num_counter,
+    ) = algorithm.my_algo_alternating(
+        mdp_object,
+        # number of alternating iterations
+        outer_iterations,
+        # "optional" values
+        desired_states_hits_update_percentage,
+        total_desired_states_hits_num,
+        total_threshold,
+        # number of iterations
+        sys_learn_iterations,
+        dijkstra_iterations,
+        strategy_desired_states_hits_termination,
+    )
