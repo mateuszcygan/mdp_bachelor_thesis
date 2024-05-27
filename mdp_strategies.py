@@ -253,6 +253,7 @@ def mdp_knowledge_strategy(
     overall_iterations_num,
     # needed for my_algo_alternating
     mdp_knowledge_percentage,  # after a certain percentage of the network is known, the exploring phase ends and agents start exploition based on calculations from value iteration
+    mdp_knowledge_states_hits_num,  # the number of hits needed to clasify a tuple as "known"
     sys_learn_iterations,
     dijkstra_iterations,
     desired_states_hits_update_percentage,
@@ -273,18 +274,21 @@ def mdp_knowledge_strategy(
     state_action_num = calculate_state_action_tuple_num(probabilities, states)
 
     # DEBUG
-    print("state_action_num:", state_action_num)
+    print(
+        "state_action_num: (inside mdp_knowledge_strategy function)", state_action_num
+    )
 
     # calculate after how many different state_action hits 'my_algo_alternating' should terminate
-    strategy_desired_states_hits_termination = math.floor(
+    mdp_knowledge_desired_tuples_termination = math.floor(
         state_action_num * mdp_knowledge_percentage
     )
 
     # DEBUG
     print(
-        "strategy_desired_states_hits_termination:",
-        strategy_desired_states_hits_termination,
+        "strategy_desired_states_hits_termination: (inside mdp_knowledge_strategy function)",
+        mdp_knowledge_desired_tuples_termination,
     )
+    print("\n")
 
     # calculate how many iterations at the maximum can be performed in 'my_algo_alternating'
     # for the case that the desired number of "mdp_knowledge" can't be achieved
@@ -310,7 +314,8 @@ def mdp_knowledge_strategy(
         # number of iterations
         sys_learn_iterations,
         dijkstra_iterations,
-        strategy_desired_states_hits_termination,
+        mdp_knowledge_desired_tuples_termination,
+        mdp_knowledge_states_hits_num,
     )
 
     approximated_mdp = mdp.MDP(states, actions, approximated_prob, learned_rewards)
@@ -396,6 +401,8 @@ def mdp_knowledge_strategy(
 
         if iterations_num_counter >= overall_iterations_num:
             # DEBUG
+            print("\n")
+            print("TERMINATION mdp_knowledge_strategy")
             print(
                 "iterations_num_counter >= overall_iterations_num, iterations_num_counter:",
                 iterations_num_counter,

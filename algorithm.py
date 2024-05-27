@@ -282,7 +282,9 @@ def check_desired_state_action_hits_num(states_hits, desired_states_hits_num):
 
 # MDP_KNOWLEDGE_STRATEGY
 # checks if the agent know the desired percentage of the mdp
-def desired_mdp_knowledge_check(strategy_desired_states_hits_termination, states_hits):
+def desired_mdp_knowledge_check(
+    mdp_knowledge_desired_tuples_termination, mdp_knowledge_states_hits_num, states_hits
+):
 
     state_action_hits = calculate_state_action_hits(states_hits)
 
@@ -290,17 +292,20 @@ def desired_mdp_knowledge_check(strategy_desired_states_hits_termination, states
 
     for state, actions in state_action_hits.items():
         for action, hits in actions.items():
-            if hits > 0:
+            if hits >= mdp_knowledge_states_hits_num:
                 visited_tuple_num += 1
 
-    if visited_tuple_num >= strategy_desired_states_hits_termination:
+    if visited_tuple_num >= mdp_knowledge_desired_tuples_termination:
 
         # DEBUG
+        print(
+            "TERMINATION: visited_tuple_num >= mdp_knowledge_desired_tuples_termination"
+        )
         print("state_action_hits:", state_action_hits)
         print("visited_tuple_num:", visited_tuple_num)
         print(
             "strategy_desired_states_hits_termination:",
-            strategy_desired_states_hits_termination,
+            mdp_knowledge_desired_tuples_termination,
         )
 
         return True
@@ -721,7 +726,8 @@ def my_algo_alternating(
     sys_learn_iterations=0,
     dijkstra_iterations=0,
     # number of different states_hits for termination (mdp_knowledge_strategy)
-    strategy_desired_states_hits_termination=None,
+    mdp_knowledge_desired_tuples_termination=None,
+    mdp_knowledge_states_hits_num=None,
 ):
 
     # The structure of MDP is known
@@ -753,10 +759,9 @@ def my_algo_alternating(
         desired_states_hits_update_percentage * total_desired_states_hits_num
     )
 
-    iterations_num = 0
+    iterations_num = 0  # Counter that stores the number of executed outer iterations
 
-    # Counters that store the value of already executed iterations
-    iterations_num_counter = 0
+    iterations_num_counter = 0  # Counter that stores the value of already executed iterations inside of systematic_learning and explore_least_known_state_action_dijkstra
 
     while True:
 
@@ -842,24 +847,28 @@ def my_algo_alternating(
             if iterations_num >= outer_iterations and convergence_check:
                 break
         else:  # total_threshold IS None
-            if strategy_desired_states_hits_termination is None:
+            if mdp_knowledge_desired_tuples_termination is None:
                 if iterations_num >= outer_iterations:
                     approximated_prob = copy.deepcopy(approximated_prob_new)
                     break
             else:  # total_threshold IS None "and" strategy_desired_states_hits_termination IS NOT None
                 desired_mdp_knowledge = desired_mdp_knowledge_check(
-                    strategy_desired_states_hits_termination, states_hits
+                    mdp_knowledge_desired_tuples_termination,
+                    mdp_knowledge_states_hits_num,
+                    states_hits,
                 )
                 if iterations_num >= outer_iterations or desired_mdp_knowledge:
                     approximated_prob = copy.deepcopy(approximated_prob_new)
-                    print(
-                        "if iterations_num >= outer_iterations or desired_mdp_knowledge == True, iterations_num_counter:",
-                        iterations_num_counter,
-                    )
+
                     break
 
     # DEBUG
-    print("Total iterations number:", iterations_num)
+    print("\n")
+    print("Total outer iterations number:", iterations_num)
+    print(
+        "Iterations inside 'systematic_learning', 'dijkstra': (iterations_num_counter)",
+        iterations_num_counter,
+    )
 
     return (
         approximated_prob,

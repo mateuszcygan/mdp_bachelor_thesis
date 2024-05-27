@@ -36,19 +36,17 @@ mdp_dijkstra = generator.read_saved_mdp("mdp_dijkstra.pkl")
 
 
 # MDP_KNOWLEDGE_STRATEGY
+
 approximated_mdp_knowledge, rewards_sum_knowledge = (
     mdp_strategies.mdp_knowledge_strategy(
-        mdp_obj1, 400, 0.9, 25, 25, 0.3, 10, None, 0.01, 0.9, 0.2
+        mdp_obj1, 1000, 0.9, 4, 25, 25, 0.3, 10, None, 0.01, 0.9, 0.2
     )
 )
 
-print("mdp_obj1 approximated probabilities:")
-mdp.print_mdp_details(approximated_mdp_knowledge.probabilities)
+# print("mdp_obj1 approximated probabilities:")
+# mdp.print_mdp_details(approximated_mdp_knowledge.probabilities)
 
-print("mdp_obj1 learned rewards:")
-mdp.print_mdp_details(approximated_mdp_knowledge.rewards)
+# print("mdp_obj1 learned rewards:")
+# mdp.print_mdp_details(approximated_mdp_knowledge.rewards)
 
 print("rewards_sum:", rewards_sum_knowledge)
-
-
-# MDP_KNOWLEDGE_STRATEGY
