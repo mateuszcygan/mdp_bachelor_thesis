@@ -755,9 +755,13 @@ def my_algo_alternating(
     current_state = "s0"  # Start at state 's0'
     alternate_function = True  # Flag to switch between functions
 
+    # Note:
+    # total_desired_states_hits_num - the number of hits that each state should have, so that the algorithm together with convergence terminates
+    # desired_states_hits_update_percentage - a parameter that indicates in percantage after how many percent of 'total_desired_states_hits_num' (a certain number),
+    # there should be a change in the approach of calculating approximated probabilities
     update_prob_approach_parameter = math.floor(
         desired_states_hits_update_percentage * total_desired_states_hits_num
-    )
+    )  # indicates how many states_hits each tuple need to have in order to change the approach that calculates the approximated probabilities
 
     iterations_num = 0  # Counter that stores the number of executed outer iterations
 
