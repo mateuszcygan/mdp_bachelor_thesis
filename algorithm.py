@@ -867,7 +867,6 @@ def my_algo_alternating(
                     break
 
     # DEBUG
-    print("\n")
     print("Total outer iterations number:", iterations_num)
     print(
         "Iterations inside 'systematic_learning', 'dijkstra': (iterations_num_counter)",
