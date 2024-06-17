@@ -252,9 +252,8 @@ def dijkstra_alg(mdp_object_states, approximated_prob, start_state, end_state):
     # DEBUG
     # print_shortest_path_table(shortest_path)
 
-    shortest_path_value = (
-        -1
-    )  # For comparisson if it is required to calculate further (probability of reaching the end state)
+    shortest_path_value = -1  # For comparisson if it is required to calculate further
+    # (probability of reaching the end state is here stored when we haven't reached the end_state yet)
 
     # Initialize the current visiting node to node from which we start
     current_visit_state = start_state

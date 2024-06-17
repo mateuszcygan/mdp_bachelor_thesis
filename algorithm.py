@@ -222,7 +222,7 @@ def calculate_states_hits(states_hits):
     return states_hits_sum
 
 
-# Calculates number of hits for each action in cerain state
+# Calculates number of hits for each action in certain state
 def calculate_state_action_hits(states_hits):
 
     state_action_hits = {}

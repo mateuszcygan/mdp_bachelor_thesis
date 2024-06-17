@@ -48,6 +48,7 @@ def update_value_iteration_policy_rewards(
 
     rewards_extremes = find_rewards_extremes(learned_rewards)
 
+    # if the smallest or the biggest reward changed, the value iteration is repeated calculated
     if (
         rewards_extremes["min_reward"] < old_min_reward
         or rewards_extremes["max_reward"] > old_max_reward
@@ -175,6 +176,11 @@ def iterations_num_strategy(
         sys_learn_iterations,
         dijkstra_iterations,
     )
+
+    # DEBUG
+    print(states_hits)
+    print(current_state)
+    print("\n")
 
     approximated_mdp = mdp.MDP(states, actions, approximated_prob, learned_rewards)
 
