@@ -38,6 +38,7 @@ def update_value_iteration_policy_rewards(
     learned_rewards,
     rewards_extremes,
     mdp_object,
+    approx_mdp_prob_value_iteration_calculation,
     V,
     policy,
     value_iteration_threshold,
@@ -53,6 +54,10 @@ def update_value_iteration_policy_rewards(
         rewards_extremes["min_reward"] < old_min_reward
         or rewards_extremes["max_reward"] > old_max_reward
     ):
+        # value iteration will be updated, approx_mdp_prob_value_iteration_calculation should be updated
+        approx_mdp_prob_new = mdp_object.probabilities
+        approx_mdp_prob_value_iteration_calculation = copy.deepcopy(approx_mdp_prob_new)
+
         V, policy = update_value_iteration(
             overall_iterations_num,
             executed_iterations,
@@ -61,7 +66,7 @@ def update_value_iteration_policy_rewards(
             value_iteration_dis_factor,
         )
 
-    return V, policy
+    return V, policy, approx_mdp_prob_value_iteration_calculation
 
 
 # checks if there was an enough big change (value_iteration_prob_recalculation_parameter) between two probabilities
@@ -70,7 +75,7 @@ def recalculate_value_iteration_prob_difference(
     value_iteration_prob_recalculation_parameter,
     current_state,
     executed_action,
-    approximated_prob,
+    approx_mdp_prob_value_iteration_calculation,
     approximated_prob_new,
 ):
 
@@ -79,10 +84,16 @@ def recalculate_value_iteration_prob_difference(
         1e-9  # A small tolerance value - inprecision of floating point arithmetic
     )
 
-    prob_to_check_old = approximated_prob[current_state][executed_action].items()
+    prob_to_check_value_iteration_calculation = (
+        approx_mdp_prob_value_iteration_calculation[current_state][
+            executed_action
+        ].items()
+    )
     prob_to_check_new = approximated_prob_new[current_state][executed_action].items()
 
-    for (k1, v1), (k2, v2) in zip(prob_to_check_old, prob_to_check_new):
+    for (k1, v1), (k2, v2) in zip(
+        prob_to_check_value_iteration_calculation, prob_to_check_new
+    ):
 
         prob_difference = abs(v1 - v2)
 
@@ -177,11 +188,6 @@ def iterations_num_strategy(
         dijkstra_iterations,
     )
 
-    # DEBUG
-    print(states_hits)
-    print(current_state)
-    print("\n")
-
     approximated_mdp = mdp.MDP(states, actions, approximated_prob, learned_rewards)
 
     # extract needed values from approximated mdp (the ones that still will be updated)
@@ -190,6 +196,9 @@ def iterations_num_strategy(
 
     # create copy of approximated probabilities for further checks (essential for value iteration recalculation check)
     approx_mdp_prob_new = copy.deepcopy(approx_mdp_prob)
+
+    # probabilities needed for comparisson if value iteration should be updated
+    approx_mdp_prob_value_iteration_calculation = copy.deepcopy(approx_mdp_prob)
 
     V, policy = update_value_iteration(
         overall_iterations_num,
@@ -226,7 +235,7 @@ def iterations_num_strategy(
             value_iteration_prob_recalculation_parameter,
             current_state,
             action_to_execute,
-            approx_mdp_prob,
+            approx_mdp_prob_value_iteration_calculation,
             approx_mdp_prob_new,
         )
 
@@ -235,6 +244,11 @@ def iterations_num_strategy(
             # necessary, since 'value_iteration' takes whole mdp as an argument
             approximated_mdp.probabilities = copy.deepcopy(approx_mdp_prob_new)
             approximated_mdp.rewards = copy.deepcopy(approx_mdp_learned_rewards)
+
+            # value iteration will be updated, approx_mdp_prob_value_iteration_calculation should be updated
+            approx_mdp_prob_value_iteration_calculation = copy.deepcopy(
+                approx_mdp_prob_new
+            )
 
             V, policy = update_value_iteration(
                 overall_iterations_num,
@@ -252,16 +266,19 @@ def iterations_num_strategy(
             approximated_mdp.rewards = copy.deepcopy(approx_mdp_learned_rewards)
 
             # check if the new stored reward is new max/min_reward
-            V, policy = update_value_iteration_policy_rewards(
-                overall_iterations_num,
-                iterations_num_counter,
-                approx_mdp_learned_rewards,
-                rewards_extremes,
-                approximated_mdp,
-                V,
-                policy,
-                value_iteration_threshold,
-                value_iteration_dis_factor,
+            V, policy, approx_mdp_prob_value_iteration_calculation = (
+                update_value_iteration_policy_rewards(
+                    overall_iterations_num,
+                    iterations_num_counter,
+                    approx_mdp_learned_rewards,
+                    rewards_extremes,
+                    approximated_mdp,
+                    approx_mdp_prob_value_iteration_calculation,
+                    V,
+                    policy,
+                    value_iteration_threshold,
+                    value_iteration_dis_factor,
+                )
             )
 
         rewards_sum += reward
@@ -275,7 +292,7 @@ def iterations_num_strategy(
             approximated_mdp.rewards = copy.deepcopy(approx_mdp_learned_rewards)
 
             # DEBUG
-            print("policy (after termination)", policy)
+            # print("policy (after termination)", policy)
 
             break
 
@@ -376,6 +393,9 @@ def mdp_knowledge_strategy(
     # create copy of approximated probabilities for further checks (essential for value iteration recalculation check )
     approx_mdp_prob_new = copy.deepcopy(approx_mdp_prob)
 
+    # probabilities needed for comparisson if value iteration should be updated
+    approx_mdp_prob_value_iteration_calculation = copy.deepcopy(approx_mdp_prob)
+
     V, policy = update_value_iteration(
         overall_iterations_num,
         iterations_num_counter,
@@ -411,7 +431,7 @@ def mdp_knowledge_strategy(
             value_iteration_prob_recalculation_parameter,
             current_state,
             action_to_execute,
-            approx_mdp_prob,
+            approx_mdp_prob_value_iteration_calculation,
             approx_mdp_prob_new,
         )
 
@@ -420,6 +440,11 @@ def mdp_knowledge_strategy(
             # necessary, since 'value_iteration' takes whole mdp as an argument
             approximated_mdp.probabilities = copy.deepcopy(approx_mdp_prob_new)
             approximated_mdp.rewards = copy.deepcopy(approx_mdp_learned_rewards)
+
+            # value iteration will be updated, approx_mdp_prob_value_iteration_calculation should be updated
+            approx_mdp_prob_value_iteration_calculation = copy.deepcopy(
+                approx_mdp_prob_new
+            )
 
             V, policy = update_value_iteration(
                 overall_iterations_num,
@@ -437,16 +462,19 @@ def mdp_knowledge_strategy(
             approximated_mdp.rewards = copy.deepcopy(approx_mdp_learned_rewards)
 
             # check if the new stored reward is new max/min_reward
-            V, policy = update_value_iteration_policy_rewards(
-                overall_iterations_num,
-                iterations_num_counter,
-                approx_mdp_learned_rewards,
-                rewards_extremes,
-                approximated_mdp,
-                V,
-                policy,
-                value_iteration_threshold,
-                value_iteration_dis_factor,
+            V, policy, approx_mdp_prob_value_iteration_calculation = (
+                update_value_iteration_policy_rewards(
+                    overall_iterations_num,
+                    iterations_num_counter,
+                    approx_mdp_learned_rewards,
+                    rewards_extremes,
+                    approximated_mdp,
+                    approx_mdp_prob_value_iteration_calculation,
+                    V,
+                    policy,
+                    value_iteration_threshold,
+                    value_iteration_dis_factor,
+                )
             )
 
         rewards_sum += reward
