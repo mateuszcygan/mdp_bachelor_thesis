@@ -155,28 +155,10 @@ def update_approx_prob(
                 approximated_prob, states_hits, current_state, executed_action, states
             )
         else:
-            # DEBUG
-            # print(
-            #     "\n\n\nCalculation approach changed after",
-            #     iterations_num_counter,
-            #     "iterations.",
-            # )
-
-            # state_action_hits_sum = calculate_state_action_hits(states_hits)
-            # print(state_action_hits_sum)
-
-            # print("Approximated probabilities (uniform distribution):")
-            # mdp.print_mdp_details(approximated_prob)
-            # DEBUG
 
             approximated_prob = calculate_approx_prob_states_hits(
                 approximated_prob, states_hits
             )
-
-            # DEBUG
-            # print("Approximated probabilities (states hits):")
-            # mdp.print_mdp_details(approximated_prob)
-            # DEBUG
 
             min_iterations_hits_states_approach_reached = True
     else:
@@ -323,11 +305,10 @@ def convergence(
     desired_states_hits_num,
 ):
 
-    desired_states_hits_num_check = check_desired_state_action_hits_num(
-        states_hits, desired_states_hits_num
-    )
-    # DEBUG
-    # print("desired_states_hits_num_check:", desired_states_hits_num_check)
+    desired_states_hits_num_check = True  # we don't want to consider desired_states_hits_num since we have finite horizon
+    # desired_states_hits_num_check = check_desired_state_action_hits_num(
+    #     states_hits, desired_states_hits_num
+    # )
 
     # Check convergence
     convergence = True
@@ -567,8 +548,41 @@ def explore_least_known_state_action_dijkstra(
             states, approximated_prob, current_state, least_visited_state
         )
 
+        # there is no path between start_state and end_state -> execute the least chosen action from current state to change the state
         if len(shortest_path_actions) == 0:
-            raise ValueError('Error! "shortest_path_actions" array empty.')
+            iterations_num_counter += 1
+            i += 1
+
+            least_executed_action = get_the_least_executed_action(
+                states_hits, current_state
+            )
+
+            next_state, reward, learned_rewards, states_hits = execute_action(
+                states,
+                probabilities,
+                rewards,
+                learned_rewards,
+                current_state,
+                least_executed_action,
+                states_hits,
+            )
+
+            rewards_sum += reward
+
+            approximated_prob = update_approx_prob(
+                update_prob_approach_parameter,
+                iterations_num_counter,
+                approximated_prob,
+                states_hits,
+                current_state,
+                least_executed_action,
+                states,
+            )
+
+            if i >= iterations_num:
+                break
+
+            continue
 
         while True:
 

@@ -262,6 +262,7 @@ def dijkstra_alg(mdp_object_states, approximated_prob, start_state, end_state):
     while end_state in unvisited_states:
 
         # Extract probabilities to neighbours (only states (neighbours) that haven't been visited yet are considered)
+
         neighbours = neighbour_biggest_prob(
             unvisited_states, approximated_prob, current_visit_state
         )
@@ -300,6 +301,10 @@ def dijkstra_alg(mdp_object_states, approximated_prob, start_state, end_state):
         current_visit_state = choose_next_state_to_visit(
             shortest_path, unvisited_states
         )
+
+        # no path exists between start_state and end_state
+        if current_visit_state == None:
+            return []
 
     shortest_path_actions = get_shortest_path_actions(shortest_path, end_state)
 
