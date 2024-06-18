@@ -112,6 +112,31 @@ def generate_prob(states, actions):
     return prob_dict
 
 
+def generate_probabilities_for_big_mdps(states, actions):
+    prob_dict = {}
+    num_states = len(states)
+
+    for state in states:
+        prob_dict[state] = {}
+        prob_dict_state = prob_dict[state]
+        for action in actions:
+            remaining_prob = 1.0
+            probs = []
+
+            for i in range(num_states - 1):
+                prob = round(random.uniform(0, remaining_prob / (num_states - i)), 2)
+                probs.append(prob)
+                remaining_prob -= prob
+
+            probs.append(round(remaining_prob, 2))
+            random.shuffle(probs)  # Shuffle to avoid bias towards early states
+            prob_dict_state[action] = {
+                state: prob for state, prob in zip(states, probs)
+            }
+
+    return prob_dict
+
+
 # For debugging cases - generation of specific mdps
 def set_all_values_to_zero(d):
     for key, value in d.items():
@@ -191,7 +216,10 @@ def createMDP(states_num, actions_num, min_reward, max_reward):
     A = generate_actions(actions_num)
 
     R = generate_rewards(S, A, min_reward, max_reward)
-    P = generate_prob(S, A)
+    if states_num < 5:
+        P = generate_prob(S, A)
+    else:
+        P = generate_probabilities_for_big_mdps(S, A)
 
     return MDP(S, A, P, R)
 
@@ -404,18 +432,6 @@ def sparse_mdp_rewards(mdp, reward_sparsity_rate):
 
 
 def reduce_actions_number(mdp, min_num=1, max_num=None):
-    """
-    Reduce the number of possible actions for each state
-
-    Args:
-    - mdp: An object representing the MDP.
-    - min_num: The minimum number of possible actions from a state. Defaults to 1.
-    - max_num: The maximum number of possible actions from a state. If not specified, defaults to the total number of actions available in the MDP.
-
-    Returns:
-
-    Test: executable actions in rewards and probabilities for the same states are the same
-    """
 
     # If max_num not defined, assign the value of possible states
     if max_num is None:
@@ -466,3 +482,28 @@ def print_mdp_sets(mdp_obj):
     print_mdp_details(P)
     print("rewards:")
     print_mdp_details(R)
+
+
+# DEBUG
+
+
+# function that outputs the sum of all following states' probabilities for each state
+def check_prob_sum(probabilities):
+    for state, actions in probabilities.items():
+        for action, states in actions.items():
+            sum = 0
+            for foll_state, value in states.items():
+                sum += value
+            print(state, ":", sum)
+            print("\n")
+
+
+# function that outputs the sum of rewards from each following states for each of the states
+def check_rewards_sum(rewards):
+    for state, actions in rewards.items():
+        for action, states in actions.items():
+            sum = 0
+            for foll_state, reward in states.items():
+                sum += reward
+            print(state, ":", sum)
+            print("\n")
