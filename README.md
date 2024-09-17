@@ -11,6 +11,8 @@ In this phase, the algorithm systematically explores the model to learn its stru
 ### Exploitation Phase
 After the exploration phase, the Value Iteration algorithm is used as the basis for this phase. It leverages the approximated transition probabilities and rewards to compute an optimal policy for the MDP.
 
+
+
 ## Algorithm difference
 Although both algorithms share the same core structure, they differ in how they determine when to transition from the exploration (learning) phase to the exploitation (optimization) phase:
 
